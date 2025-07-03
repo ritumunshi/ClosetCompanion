@@ -12,6 +12,8 @@ import {
   type OutfitHistory,
   type InsertOutfitHistory
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, gte } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -176,4 +178,100 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getClothingItems(userId: number): Promise<ClothingItem[]> {
+    return await db.select().from(clothingItems).where(eq(clothingItems.userId, userId));
+  }
+
+  async getClothingItem(id: number): Promise<ClothingItem | undefined> {
+    const [item] = await db.select().from(clothingItems).where(eq(clothingItems.id, id));
+    return item || undefined;
+  }
+
+  async createClothingItem(insertItem: InsertClothingItem): Promise<ClothingItem> {
+    const [item] = await db
+      .insert(clothingItems)
+      .values(insertItem)
+      .returning();
+    return item;
+  }
+
+  async updateClothingItem(id: number, updates: Partial<ClothingItem>): Promise<ClothingItem | undefined> {
+    const [item] = await db
+      .update(clothingItems)
+      .set(updates)
+      .where(eq(clothingItems.id, id))
+      .returning();
+    return item || undefined;
+  }
+
+  async deleteClothingItem(id: number): Promise<boolean> {
+    const result = await db.delete(clothingItems).where(eq(clothingItems.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getOutfits(userId: number): Promise<Outfit[]> {
+    return await db.select().from(outfits).where(eq(outfits.userId, userId));
+  }
+
+  async getOutfit(id: number): Promise<Outfit | undefined> {
+    const [outfit] = await db.select().from(outfits).where(eq(outfits.id, id));
+    return outfit || undefined;
+  }
+
+  async createOutfit(insertOutfit: InsertOutfit): Promise<Outfit> {
+    const [outfit] = await db
+      .insert(outfits)
+      .values(insertOutfit)
+      .returning();
+    return outfit;
+  }
+
+  async deleteOutfit(id: number): Promise<boolean> {
+    const result = await db.delete(outfits).where(eq(outfits.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getOutfitHistory(userId: number): Promise<OutfitHistory[]> {
+    return await db.select().from(outfitHistory).where(eq(outfitHistory.userId, userId));
+  }
+
+  async createOutfitHistory(insertHistory: InsertOutfitHistory): Promise<OutfitHistory> {
+    const [history] = await db
+      .insert(outfitHistory)
+      .values(insertHistory)
+      .returning();
+    return history;
+  }
+
+  async getRecentOutfitHistory(userId: number, days: number): Promise<OutfitHistory[]> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    return await db
+      .select()
+      .from(outfitHistory)
+      .where(eq(outfitHistory.userId, userId))
+      .where(gte(outfitHistory.wornDate, cutoffDate));
+  }
+}
+
+export const storage = new DatabaseStorage();
