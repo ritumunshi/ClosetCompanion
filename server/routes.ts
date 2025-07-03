@@ -42,20 +42,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/clothing-items", upload.single('image'), async (req, res) => {
     try {
-      const body = JSON.parse(req.body.data || '{}');
-      const validatedData = insertClothingItemSchema.parse({
-        ...body,
+      console.log('Request body:', req.body);
+      console.log('Request file:', req.file);
+      
+      if (!req.body.data) {
+        return res.status(400).json({ error: "Missing data field" });
+      }
+      
+      const body = JSON.parse(req.body.data);
+      console.log('Parsed body:', body);
+      
+      const itemData = {
+        name: body.name,
+        category: body.category,
         userId: DEMO_USER_ID,
-        imageUrl: req.file ? `/uploads/${req.file.filename}` : null
-      });
+        imageUrl: req.file ? `/uploads/${req.file.filename}` : null,
+        colors: body.colors || null,
+        seasons: body.seasons || null,
+        occasions: body.occasions || null,
+        wearCount: 0,
+        lastWorn: null
+      };
+      
+      console.log('Item data to validate:', itemData);
+      const validatedData = insertClothingItemSchema.parse(itemData);
       
       const item = await storage.createClothingItem(validatedData);
       res.json(item);
     } catch (error) {
+      console.error('Error creating clothing item:', error);
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: "Invalid data", details: error.errors });
       } else {
-        res.status(500).json({ error: "Failed to create clothing item" });
+        res.status(500).json({ error: "Failed to create clothing item", message: error.message });
       }
     }
   });

@@ -85,9 +85,17 @@ export class MemStorage implements IStorage {
   async createClothingItem(insertItem: InsertClothingItem): Promise<ClothingItem> {
     const id = this.currentClothingItemId++;
     const item: ClothingItem = { 
-      ...insertItem, 
       id, 
-      createdAt: new Date() 
+      userId: insertItem.userId,
+      name: insertItem.name,
+      category: insertItem.category,
+      imageUrl: insertItem.imageUrl || null,
+      colors: insertItem.colors || null,
+      seasons: insertItem.seasons || null,
+      occasions: insertItem.occasions || null,
+      lastWorn: insertItem.lastWorn || null,
+      wearCount: insertItem.wearCount || 0,
+      createdAt: new Date()
     };
     this.clothingItems.set(id, item);
     return item;
@@ -119,9 +127,13 @@ export class MemStorage implements IStorage {
   async createOutfit(insertOutfit: InsertOutfit): Promise<Outfit> {
     const id = this.currentOutfitId++;
     const outfit: Outfit = { 
-      ...insertOutfit, 
       id, 
-      createdAt: new Date() 
+      userId: insertOutfit.userId,
+      name: insertOutfit.name,
+      itemIds: insertOutfit.itemIds || null,
+      occasion: insertOutfit.occasion || null,
+      weather: insertOutfit.weather || null,
+      createdAt: new Date()
     };
     this.outfits.set(id, outfit);
     return outfit;
@@ -140,9 +152,13 @@ export class MemStorage implements IStorage {
   async createOutfitHistory(insertHistory: InsertOutfitHistory): Promise<OutfitHistory> {
     const id = this.currentHistoryId++;
     const history: OutfitHistory = { 
-      ...insertHistory, 
       id, 
-      wornDate: new Date() 
+      userId: insertHistory.userId,
+      outfitId: insertHistory.outfitId || null,
+      itemIds: insertHistory.itemIds || null,
+      occasion: insertHistory.occasion || null,
+      weather: insertHistory.weather || null,
+      wornDate: new Date()
     };
     this.outfitHistory.set(id, history);
     return history;
