@@ -1,0 +1,137 @@
+Here’s an updated PRD for your Closet Concierge iOS MVP, now including a basic local AI model that suggests simple outfits based on on-device logic — no internet, no external APIs, no server, all offline and private.
+
+⸻
+
+📄 Closet Concierge MVP – iOS (Local-Only)
+
+Version: MVP v1.1 – with On-Device AI
+Scope: Offline app with basic outfit suggestion logic
+Platform: iOS (Swift / SwiftUI)
+
+⸻
+
+✅ 1. Executive Summary
+
+Closet Concierge MVP now includes offline outfit suggestions using a simple local AI model. The logic uses rule-based pairing (e.g. top + bottom + shoes) combined with tags like season, occasion, and recent wear to recommend a daily outfit from the user’s catalog.
+
+⸻
+
+🎯 2. Updated Goals
+	•	All clothing data and AI logic runs locally on-device
+	•	Provide daily outfit suggestions based on:
+	•	Weather (manual input)
+	•	Occasion (user input)
+	•	Season tags on clothing
+	•	Time since last worn (to maximize rotation)
+
+⸻
+
+🧠 3. Local AI – Recommendation Engine (Basic)
+
+Logic:
+	1.	User selects:
+	•	Occasion (Work, Casual, Party, Gym, etc.)
+	•	Weather (Cold, Warm, Rainy, etc.)
+	2.	Filter user’s wardrobe for:
+	•	Items tagged for selected occasion
+	•	Items suitable for weather (via season tag)
+	•	Items not worn recently
+	3.	Match rules:
+	•	Top + Bottom + Footwear [+ optional Outerwear or Accessory]
+	•	Avoid duplicate items used yesterday (tracked locally)
+	•	Prefer items with low wear count (to increase rotation)
+	4.	Randomly select from filtered pool to:
+	•	Assemble a valid outfit
+	•	Score combinations using simple heuristics (e.g., don’t mix too many patterns or clashing colors)
+
+Model Type:
+	•	Rule-based + scoring function
+	•	Implemented in Swift (no ML framework)
+	•	Future: replace with Core ML model if needed
+
+⸻
+
+🧩 4. Updated Features
+
+✅ Add Clothing Item
+
+Same as before (photo + tags)
+
+✅ View Wardrobe
+
+Same as before
+
+✅ Create Outfit (Manual)
+
+Same as before
+
+🆕 Daily Outfit Suggestion
+	•	Tap “Suggest Outfit” from home screen
+	•	Choose occasion and weather
+	•	App suggests:
+	•	1 top + 1 bottom + 1 pair of shoes [+ optional jacket/accessory]
+	•	User can:
+	•	Save as outfit
+	•	Shuffle to regenerate
+	•	Edit manually
+
+🆕 Outfit History & Rotation
+	•	App logs worn items per day (local)
+	•	Avoids suggesting same piece too frequently
+	•	Tracks wear count per item
+
+⸻
+
+🛠️ 5. Technical Design (AI Logic)
+
+Data Sources:
+	•	User wardrobe (Core Data / local DB)
+	•	Tags: category, color, season, occasion
+	•	Outfit history: item UUIDs, date worn
+
+AI Logic: Example Heuristics
+
+// Pseudo-code
+if item.season.contains(currentSeason) &&
+   item.occasion.contains(selectedOccasion) &&
+   item.lastWorn > 5 days ago {
+    item.score += 10
+}
+if item.color == neutral { item.score += 5 }
+if item.pattern != conflictingPattern { item.score += 3 }
+
+	•	Random selection among top 3 scoring items per category
+	•	Filtered by weather + tags
+
+⸻
+
+🔐 6. Privacy
+	•	All logic and data stay 100% on device
+	•	No external network or ML APIs
+	•	No user tracking
+
+⸻
+
+🧪 7. Success Criteria
+	•	90% of users can get at least one outfit suggestion
+	•	Outfit logic doesn’t repeat items more than 2 days in a row
+	•	Local AI returns result <1 sec
+	•	Users save ≥5 AI-generated outfits after cataloging
+
+⸻
+
+📆 8. Dev Milestone Update
+
+Week	Task
+5	Local AI logic function + suggestion UI
+6	Wear tracking + outfit history
+7	Integrate AI with outfit builder
+8	UI polish, testing AI flow
+
+
+⸻
+
+Let me know if you want:
+	•	SwiftUI code for the outfit suggestion logic
+	•	Figma for the AI recommendation UI
+	•	or conversion to macOS/iPad version too.
