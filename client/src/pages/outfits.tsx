@@ -1,13 +1,60 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Palette, Plus } from "lucide-react";
-import type { Outfit } from "@shared/schema";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Palette, Plus, Trash2, Eye } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import type { Outfit, ClothingItem } from "@shared/schema";
 
 export default function Outfits() {
+  const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
+  const [showOutfitModal, setShowOutfitModal] = useState(false);
+  const { toast } = useToast();
+
   const { data: outfits = [], isLoading } = useQuery<Outfit[]>({
     queryKey: ['/api/outfits'],
   });
+
+  const { data: items = [] } = useQuery<ClothingItem[]>({
+    queryKey: ['/api/clothing-items'],
+  });
+
+  const deleteOutfitMutation = useMutation({
+    mutationFn: async (outfitId: number) => {
+      return apiRequest("DELETE", `/api/outfits/${outfitId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/outfits'] });
+      toast({
+        title: "Success!",
+        description: "Outfit deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete outfit.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleViewOutfit = (outfit: Outfit) => {
+    setSelectedOutfit(outfit);
+    setShowOutfitModal(true);
+  };
+
+  const handleDeleteOutfit = (outfitId: number) => {
+    if (confirm("Are you sure you want to delete this outfit?")) {
+      deleteOutfitMutation.mutate(outfitId);
+    }
+  };
+
+  const getOutfitItems = (itemIds: number[]) => {
+    return itemIds.map(id => items.find(item => item.id === id)).filter(Boolean) as ClothingItem[];
+  };
 
   return (
     <div className="pb-20 min-h-screen">
@@ -33,35 +80,140 @@ export default function Outfits() {
           </div>
         ) : outfits.length > 0 ? (
           <div className="grid grid-cols-2 gap-4">
-            {outfits.map((outfit) => (
-              <Card 
-                key={outfit.id}
-                className="aspect-square bg-white rounded-xl border border-neutral-200 overflow-hidden hover-lift cursor-pointer"
-              >
-                <div className="w-full h-full bg-gradient-to-br from-neutral-100 to-neutral-200 flex flex-col items-center justify-center p-4">
-                  <Palette size={32} className="text-neutral-400 mb-2" />
-                  <h3 className="font-medium text-neutral-800 text-center text-sm">
-                    {outfit.name}
-                  </h3>
-                  {outfit.occasion && (
-                    <p className="text-xs text-neutral-500 mt-1">
-                      {outfit.occasion}
-                    </p>
-                  )}
-                </div>
-              </Card>
-            ))}
+            {outfits.map((outfit) => {
+              const outfitItems = getOutfitItems(outfit.itemIds || []);
+              return (
+                <Card 
+                  key={outfit.id}
+                  className="aspect-square bg-white rounded-xl border border-neutral-200 overflow-hidden hover-lift cursor-pointer relative"
+                  onClick={() => handleViewOutfit(outfit)}
+                >
+                  <div className="w-full h-full bg-gradient-to-br from-neutral-100 to-neutral-200 flex flex-col items-center justify-center p-4">
+                    {outfitItems.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-1 mb-2">
+                        {outfitItems.slice(0, 4).map((item) => (
+                          <div key={item.id} className="w-8 h-8 bg-white rounded border overflow-hidden">
+                            {item.imageUrl ? (
+                              <img 
+                                src={item.imageUrl} 
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-neutral-200" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Palette size={32} className="text-neutral-400 mb-2" />
+                    )}
+                    <h3 className="font-medium text-neutral-800 text-center text-sm">
+                      {outfit.name}
+                    </h3>
+                    {outfit.occasion && (
+                      <p className="text-xs text-neutral-500 mt-1">
+                        {outfit.occasion}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 w-6 h-6 bg-white/80 hover:bg-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteOutfit(outfit.id);
+                    }}
+                  >
+                    <Trash2 size={12} className="text-red-500" />
+                  </Button>
+                </Card>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-8 text-neutral-500">
             <Palette size={48} className="mx-auto mb-4 text-neutral-300" />
             <p>No outfits created yet.</p>
-            <Button className="mt-4">
-              Create Your First Outfit
-            </Button>
+            <p className="text-sm mt-2">Go to Home and create outfit suggestions!</p>
           </div>
         )}
       </div>
+
+      {/* Outfit Detail Modal */}
+      <Dialog open={showOutfitModal} onOpenChange={setShowOutfitModal}>
+        <DialogContent className="max-w-md mx-4 max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedOutfit?.name}</DialogTitle>
+          </DialogHeader>
+
+          {selectedOutfit && (
+            <div className="space-y-4">
+              {/* Outfit Details */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                {selectedOutfit.occasion && (
+                  <div>
+                    <span className="text-neutral-600">Occasion:</span>
+                    <p className="font-medium capitalize">{selectedOutfit.occasion}</p>
+                  </div>
+                )}
+                {selectedOutfit.weather && (
+                  <div>
+                    <span className="text-neutral-600">Weather:</span>
+                    <p className="font-medium capitalize">{selectedOutfit.weather}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Outfit Items */}
+              <div>
+                <h4 className="font-medium text-neutral-800 mb-3">Items in this outfit:</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {getOutfitItems(selectedOutfit.itemIds || []).map((item) => (
+                    <div key={item.id} className="bg-neutral-50 rounded-lg p-3">
+                      {item.imageUrl && (
+                        <div className="aspect-square bg-white rounded-lg overflow-hidden mb-2">
+                          <img 
+                            src={item.imageUrl} 
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <h5 className="font-medium text-sm text-neutral-800">{item.name}</h5>
+                      <p className="text-xs text-neutral-600 capitalize">{item.category}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowOutfitModal(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() => {
+                    if (selectedOutfit) {
+                      handleDeleteOutfit(selectedOutfit.id);
+                      setShowOutfitModal(false);
+                    }
+                  }}
+                >
+                  Delete Outfit
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
