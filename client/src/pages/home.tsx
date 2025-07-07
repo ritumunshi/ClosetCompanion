@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bell, Sparkles, Plus, Eye } from "lucide-react";
+import { Bell, Sparkles, Plus, Eye, Palette } from "lucide-react";
 import AddItemModal from "@/components/add-item-modal";
 import OutfitSuggestionModal from "@/components/outfit-suggestion-modal";
 import type { ClothingItem, Outfit } from "@shared/schema";
