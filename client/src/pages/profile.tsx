@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { User, Settings, HandHelping, LogOut, Bell, UserCircle, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { FEATURE_FLAGS } from "@/config/features";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function Profile() {
+  const { user, logout } = useAuth();
   return (
     <div className="pb-20 min-h-screen">
       {/* Header */}
@@ -22,8 +24,8 @@ export default function Profile() {
               <User size={24} className="text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-neutral-800">Fashion Enthusiast</h2>
-              <p className="text-neutral-600">Building a smart wardrobe</p>
+              <h2 className="text-xl font-semibold text-neutral-800">{user?.name || "Fashion Enthusiast"}</h2>
+              <p className="text-neutral-600">{user?.phone || "Building a smart wardrobe"}</p>
             </div>
           </div>
         </Card>
@@ -97,6 +99,8 @@ export default function Profile() {
             <Button 
               variant="ghost" 
               className="w-full p-6 justify-start text-left text-red-600 hover:text-red-700"
+              onClick={logout}
+              data-testid="button-sign-out"
             >
               <LogOut size={20} className="mr-3" />
               <span>Sign Out</span>
