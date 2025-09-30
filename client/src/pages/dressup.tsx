@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CartoonAvatar from "@/components/CartoonAvatar";
 
 export default function DressUp() {
   const [selectedAvatar, setSelectedAvatar] = useState<Avatar | null>(null);
@@ -174,75 +175,80 @@ export default function DressUp() {
               </Select>
             </div>
 
-            {/* Avatar Preview with Clothing Overlays */}
+            {/* Cartoon Avatar with Clothing Overlays */}
             {selectedAvatar && (
               <div className="mb-4">
-                <div className="relative aspect-[2/3] max-w-md mx-auto bg-neutral-100 rounded-lg overflow-hidden">
-                  {/* Base Avatar Image */}
-                  <img
-                    src={selectedAvatar.imageUrl || ''}
-                    alt={selectedAvatar.name || 'Avatar'}
-                    className="w-full h-full object-cover"
-                    data-testid="img-avatar-preview"
-                  />
-                  
-                  {/* Clothing Item Overlays */}
-                  {selectedItems.map((item) => {
-                    // Position items based on category
-                    let positionClass = '';
-                    let sizeClass = 'w-2/3';
+                <div className="relative max-w-md mx-auto bg-gradient-to-b from-sky-100 to-green-100 rounded-lg p-6">
+                  {/* Cartoon Body with Face */}
+                  <div className="relative">
+                    <CartoonAvatar 
+                      faceImageUrl={selectedAvatar.imageUrl || ''} 
+                      className="w-full h-auto"
+                    />
                     
-                    if (item.category === 'tops') {
-                      positionClass = 'top-[20%] left-1/2 -translate-x-1/2';
-                      sizeClass = 'w-3/5';
-                    } else if (item.category === 'bottoms') {
-                      positionClass = 'top-[45%] left-1/2 -translate-x-1/2';
-                      sizeClass = 'w-3/5';
-                    } else if (item.category === 'shoes') {
-                      positionClass = 'bottom-[5%] left-1/2 -translate-x-1/2';
-                      sizeClass = 'w-2/5';
-                    } else if (item.category === 'accessories') {
-                      positionClass = 'top-[15%] right-[10%]';
-                      sizeClass = 'w-1/4';
-                    }
-                    
-                    return (
-                      <div
-                        key={item.id}
-                        className={`absolute ${positionClass} ${sizeClass} group`}
-                        data-testid={`overlay-item-${item.id}`}
-                      >
-                        <img
-                          src={item.imageUrl || ''}
-                          alt={item.name}
-                          className="w-full h-auto object-contain drop-shadow-lg"
-                        />
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => handleRemoveItem(item.id)}
-                          data-testid={`button-remove-overlay-${item.id}`}
+                    {/* Clothing Item Overlays on Cartoon Body */}
+                    {selectedItems.map((item) => {
+                      // Position items on cartoon body parts
+                      let positionClass = '';
+                      let sizeClass = 'w-2/5';
+                      
+                      if (item.category === 'tops') {
+                        // Torso area (26% to 51% of body height)
+                        positionClass = 'top-[26%] left-1/2 -translate-x-1/2';
+                        sizeClass = 'w-[40%]';
+                      } else if (item.category === 'bottoms') {
+                        // Legs area (51% to 81% of body height)
+                        positionClass = 'top-[51%] left-1/2 -translate-x-1/2';
+                        sizeClass = 'w-[35%]';
+                      } else if (item.category === 'shoes') {
+                        // Feet area (81% to 90% of body height)
+                        positionClass = 'top-[81%] left-1/2 -translate-x-1/2';
+                        sizeClass = 'w-[30%]';
+                      } else if (item.category === 'accessories') {
+                        // Wrist/hand area
+                        positionClass = 'top-[40%] right-[5%]';
+                        sizeClass = 'w-[15%]';
+                      }
+                      
+                      return (
+                        <div
+                          key={item.id}
+                          className={`absolute ${positionClass} ${sizeClass} group cursor-pointer`}
+                          data-testid={`overlay-item-${item.id}`}
                         >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    );
-                  })}
+                          <img
+                            src={item.imageUrl || ''}
+                            alt={item.name}
+                            className="w-full h-auto object-contain drop-shadow-2xl"
+                            style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}
+                          />
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            className="absolute -top-2 -right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                            onClick={() => handleRemoveItem(item.id)}
+                            data-testid={`button-remove-overlay-${item.id}`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
                 
                 {/* Selected Items List */}
                 {selectedItems.length > 0 && (
                   <div className="mt-4">
-                    <h3 className="text-sm font-semibold mb-2">On Avatar ({selectedItems.length} items)</h3>
+                    <h3 className="text-sm font-semibold mb-2">Wearing ({selectedItems.length} items)</h3>
                     <div className="flex flex-wrap gap-2">
                       {selectedItems.map((item) => (
-                        <div key={item.id} className="inline-flex items-center gap-1 bg-neutral-100 rounded-full px-3 py-1">
-                          <span className="text-xs">{item.name}</span>
+                        <div key={item.id} className="inline-flex items-center gap-1 bg-primary/10 rounded-full px-3 py-1">
+                          <span className="text-xs font-medium">{item.name}</span>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-4 w-4 hover:bg-neutral-200 rounded-full"
+                            className="h-4 w-4 hover:bg-primary/20 rounded-full"
                             onClick={() => handleRemoveItem(item.id)}
                           >
                             <X className="h-3 w-3" />
