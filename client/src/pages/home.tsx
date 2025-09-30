@@ -27,9 +27,12 @@ export default function Home() {
       <header className="bg-white shadow-sm">
         <div className="max-w-md mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-neutral-800">Good Morning!</h1>
-              <p className="text-neutral-600 text-sm">Ready to look amazing?</p>
+            <div className="flex items-center gap-3">
+              <img src="/logo.jpeg" alt="ATTIRELY" className="h-10 w-10 rounded-lg object-cover" />
+              <div>
+                <h1 className="text-2xl font-bold text-neutral-800">Good Morning!</h1>
+                <p className="text-neutral-600 text-sm">Ready to look amazing?</p>
+              </div>
             </div>
             <Button variant="ghost" size="icon" className="text-neutral-600">
               <Bell size={20} />

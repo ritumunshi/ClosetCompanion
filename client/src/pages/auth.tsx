@@ -349,7 +349,8 @@ export default function Auth() {
     <div className="min-h-screen bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center p-4">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-neutral-800 mb-2">Closet Concierge</h1>
+          <img src="/logo.jpeg" alt="ATTIRELY Logo" className="h-20 w-20 mx-auto mb-4 rounded-2xl object-cover" />
+          <h1 className="text-3xl font-bold text-neutral-800 mb-2">ATTIRELY</h1>
           <p className="text-neutral-600">Your personal wardrobe assistant</p>
         </div>
 

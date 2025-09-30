@@ -32,7 +32,7 @@ function Router() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className={`min-h-screen ${isAuthenticated ? 'bg-background' : 'bg-white'}`}>
       <Switch>
         <Route path="/auth" component={Auth} />
         <ProtectedRoute path="/" component={Home} />
