@@ -84,8 +84,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { username, password, name, phone, email } = req.body;
       
-      if (!username || !password || !name || !phone) {
-        return res.status(400).json({ error: "Username, password, name, and phone are required" });
+      if (!username || !password || !name) {
+        return res.status(400).json({ error: "Username, password, and name are required" });
+      }
+
+      if (!phone && !email) {
+        return res.status(400).json({ error: "Either phone or email is required" });
       }
 
       // Check if username already exists
@@ -94,10 +98,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(409).json({ error: "Username already exists" });
       }
 
-      // Check if phone already exists
-      const existingPhone = await storage.getUserByPhone(phone);
-      if (existingPhone) {
-        return res.status(409).json({ error: "Phone number already exists" });
+      // Check if phone already exists (only if phone is provided)
+      if (phone) {
+        const existingPhone = await storage.getUserByPhone(phone);
+        if (existingPhone) {
+          return res.status(409).json({ error: "Phone number already exists" });
+        }
       }
 
       // Hash password
@@ -107,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         username,
         password: hashedPassword,
         name,
-        phone,
+        phone: phone || null,
         email: email || null
       };
 

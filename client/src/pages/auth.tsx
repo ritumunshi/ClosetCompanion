@@ -58,13 +58,12 @@ export default function Auth() {
       return response.json();
     },
     onSuccess: (data) => {
-      setOtpPhone(formData.phone);
-      setShowOtpVerification(true);
+      setUser(data.user);
       toast({
-        title: "Account Created!",
-        description: "Please verify your phone number to continue.",
+        title: "Welcome to ATTIRELY!",
+        description: "Your account has been created successfully.",
       });
-      sendOtpMutation.mutate({ phone: formData.phone });
+      setLocation("/");
     },
     onError: (error: any) => {
       toast({
@@ -160,10 +159,18 @@ export default function Auth() {
         password: formData.password
       });
     } else {
-      if (!formData.username || !formData.password || !formData.name || !formData.phone) {
+      if (!formData.username || !formData.password || !formData.name) {
         toast({
           title: "Error",
-          description: "Please fill in all required fields",
+          description: "Please fill in username, password, and name",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!formData.phone && !formData.email) {
+        toast({
+          title: "Error",
+          description: "Please provide either phone number or email",
           variant: "destructive",
         });
         return;
@@ -394,20 +401,19 @@ export default function Auth() {
               </div>
 
               <div>
-                <Label htmlFor="phone">Phone Number *</Label>
+                <Label htmlFor="phone">Phone Number</Label>
                 <Input
                   id="phone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+1 (555) 123-4567"
-                  required={!isLogin}
                   data-testid="input-phone"
                 />
               </div>
 
               <div>
-                <Label htmlFor="email">Email (Optional)</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -417,6 +423,7 @@ export default function Auth() {
                   data-testid="input-email"
                 />
               </div>
+              <p className="text-xs text-neutral-600">* Phone or Email required</p>
             </>
           )}
 

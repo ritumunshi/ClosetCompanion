@@ -7,7 +7,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
-  phone: text("phone").notNull().unique(),
+  phone: text("phone"),
   phoneVerified: boolean("phone_verified").notNull().default(false),
   otpCode: text("otp_code"),
   otpExpiry: timestamp("otp_expiry"),
