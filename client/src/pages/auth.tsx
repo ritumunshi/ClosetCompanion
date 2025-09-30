@@ -212,7 +212,7 @@ export default function Auth() {
 
   if (showOtpVerification) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md p-8">
           <div className="text-center mb-8">
             <Shield className="h-16 w-16 mx-auto mb-4 text-primary" />
@@ -298,7 +298,7 @@ export default function Auth() {
 
   if (showForgotPassword && !showOtpVerification) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md p-8">
           <div className="text-center mb-8">
             <KeyRound className="h-16 w-16 mx-auto mb-4 text-primary" />
@@ -346,7 +346,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md p-8">
         <div className="text-center mb-8">
           <img src="/logo.jpeg" alt="ATTIRELY Logo" className="h-20 w-20 mx-auto mb-4 rounded-2xl object-cover" />
