@@ -7,10 +7,13 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import { UserPlus, LogIn } from "lucide-react";
+import { UserPlus, LogIn, Shield } from "lucide-react";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
+  const [showOtpVerification, setShowOtpVerification] = useState(false);
+  const [otpPhone, setOtpPhone] = useState("");
+  const [otp, setOtp] = useState("");
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -48,17 +51,60 @@ export default function Auth() {
       const response = await apiRequest("POST", "/api/register", data);
       return response.json();
     },
+    onSuccess: (data) => {
+      setOtpPhone(formData.phone);
+      setShowOtpVerification(true);
+      toast({
+        title: "Account Created!",
+        description: "Please verify your phone number to continue.",
+      });
+      sendOtpMutation.mutate({ phone: formData.phone });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Registration failed",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const sendOtpMutation = useMutation({
+    mutationFn: async (data: { phone: string }) => {
+      const response = await apiRequest("POST", "/api/send-otp", data);
+      return response.json();
+    },
     onSuccess: () => {
       toast({
-        title: "Success!",
-        description: "Account created! Welcome to Closet Concierge!",
+        title: "Code Sent!",
+        description: "A 6-digit code has been sent to your phone.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send verification code",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const verifyOtpMutation = useMutation({
+    mutationFn: async (data: { phone: string; otp: string }) => {
+      const response = await apiRequest("POST", "/api/verify-otp", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Verified!",
+        description: "Your phone number has been verified. Welcome to Closet Concierge!",
       });
       setLocation("/");
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Registration failed",
+        description: error.message || "Invalid or expired code",
         variant: "destructive",
       });
     },
@@ -92,6 +138,79 @@ export default function Auth() {
       registerMutation.mutate(formData);
     }
   };
+
+  const handleVerifyOtp = () => {
+    if (!otp || otp.length !== 6) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid 6-digit code",
+        variant: "destructive",
+      });
+      return;
+    }
+    verifyOtpMutation.mutate({ phone: otpPhone, otp });
+  };
+
+  if (showOtpVerification) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md p-8">
+          <div className="text-center mb-8">
+            <Shield className="h-16 w-16 mx-auto mb-4 text-primary" />
+            <h1 className="text-2xl font-bold text-neutral-800 mb-2">Verify Your Phone</h1>
+            <p className="text-neutral-600">Enter the 6-digit code sent to {otpPhone}</p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="otp">Verification Code</Label>
+              <Input
+                id="otp"
+                type="text"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                placeholder="123456"
+                className="text-center text-2xl tracking-widest"
+                data-testid="input-otp"
+              />
+            </div>
+
+            <Button
+              onClick={handleVerifyOtp}
+              className="w-full"
+              disabled={verifyOtpMutation.isPending}
+              data-testid="button-verify-otp"
+            >
+              {verifyOtpMutation.isPending ? "Verifying..." : "Verify Code"}
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => sendOtpMutation.mutate({ phone: otpPhone })}
+              className="w-full"
+              disabled={sendOtpMutation.isPending}
+              data-testid="button-resend-otp"
+            >
+              {sendOtpMutation.isPending ? "Sending..." : "Resend Code"}
+            </Button>
+
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowOtpVerification(false);
+                setOtp("");
+              }}
+              className="w-full text-neutral-600"
+              data-testid="button-back-to-register"
+            >
+              Back to Registration
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center p-4">

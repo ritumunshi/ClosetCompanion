@@ -180,6 +180,14 @@ Changelog:
   - Drop-shadow visual effects for depth
   - Outfit composition storage with complete positioning data (x, y, scale, rotation, bodyType)
   - Outfit compositions display page showing saved dress-up outfits with positioning details
+- September 30, 2025. Implemented phone number verification with OTP (One-Time Password) system:
+  - Twilio SMS integration for sending 6-digit verification codes
+  - OTP codes expire after 10 minutes for security
+  - Auto-send OTP after registration
+  - Dedicated OTP verification screen with resend functionality
+  - Backend endpoints: /api/send-otp and /api/verify-otp
+  - Database tracking: otpCode and otpExpiry fields in users table
+  - User flow: Register → Receive SMS → Enter code → Verified
 ```
 
 ## User Preferences
