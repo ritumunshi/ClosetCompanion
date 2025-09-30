@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Camera, Shirt, User, Footprints, Gem, X } from "lucide-react";
+import { Camera, Shirt, User, Footprints, Gem, X, Sparkles, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import ColorThief from "colorthief";
 
 interface AddItemModalProps {
   isOpen: boolean;
@@ -18,9 +19,12 @@ export default function AddItemModal({ isOpen, onClose }: AddItemModalProps) {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSeasons, setSelectedSeasons] = useState<string[]>([]);
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
+  const [detectedColors, setDetectedColors] = useState<string[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -62,16 +66,112 @@ export default function AddItemModal({ isOpen, onClose }: AddItemModalProps) {
     setName("");
     setCategory("");
     setSelectedImage(null);
+    setImagePreview(null);
     setSelectedColors([]);
     setSelectedSeasons([]);
     setSelectedOccasions([]);
+    setDetectedColors([]);
     onClose();
+  };
+
+  const rgbToColorName = (rgb: number[]): string => {
+    const [r, g, b] = rgb;
+    
+    // Calculate color properties
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const lightness = (max + min) / 2;
+    
+    // Very light or very dark
+    if (lightness > 220) return "white";
+    if (lightness < 50) return "black";
+    if (max - min < 25) return "gray";
+    
+    // Determine dominant color
+    if (r > g && r > b) {
+      if (g > b && r - g < 50) return "yellow";
+      if (b > 100) return "purple";
+      if (lightness > 150) return "pink";
+      return "red";
+    }
+    if (g > r && g > b) {
+      if (r > b && g - r < 50) return "yellow";
+      if (b > 100) return "green";
+      return "green";
+    }
+    if (b > r && b > g) {
+      if (r > 100) return "purple";
+      if (g > 100) return "blue";
+      return "blue";
+    }
+    
+    return "brown";
+  };
+
+  const analyzeImage = async (file: File) => {
+    setIsAnalyzing(true);
+    
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.onload = () => {
+          try {
+            const colorThief = new ColorThief();
+            const palette = colorThief.getPalette(img, 5);
+            
+            // Convert RGB to color names
+            const colorNames = palette
+              .map((rgb: number[]) => rgbToColorName(rgb))
+              .filter((color: string, index: number, self: string[]) => 
+                self.indexOf(color) === index
+              );
+            
+            setDetectedColors(colorNames);
+            setSelectedColors(colorNames);
+            
+            // Suggest seasons based on detected colors
+            const lightColors = palette.filter((rgb: number[]) => {
+              const lightness = (Math.max(...rgb) + Math.min(...rgb)) / 2;
+              return lightness > 150;
+            }).length;
+            
+            if (lightColors >= 3) {
+              setSelectedSeasons(prev => Array.from(new Set([...prev, "spring", "summer"])));
+            } else {
+              setSelectedSeasons(prev => Array.from(new Set([...prev, "fall", "winter"])));
+            }
+            
+            setIsAnalyzing(false);
+          } catch (err) {
+            console.error("Color extraction error:", err);
+            setIsAnalyzing(false);
+          }
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Image analysis error:", err);
+      setIsAnalyzing(false);
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      // Analyze image for colors
+      analyzeImage(file);
     }
   };
 
@@ -149,22 +249,51 @@ export default function AddItemModal({ isOpen, onClose }: AddItemModalProps) {
           {/* Photo Upload */}
           <div>
             <Label>Photo</Label>
-            <div className="border-2 border-dashed border-neutral-300 rounded-xl p-8 text-center hover:border-primary transition-colors">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-                id="image-upload"
-              />
-              <label htmlFor="image-upload" className="cursor-pointer">
-                <Camera size={32} className="mx-auto text-neutral-400 mb-4" />
-                <p className="text-neutral-600">
-                  {selectedImage ? selectedImage.name : "Tap to take photo"}
-                </p>
-                <p className="text-sm text-neutral-500 mt-2">or choose from gallery</p>
-              </label>
-            </div>
+            {imagePreview ? (
+              <div className="relative">
+                <img 
+                  src={imagePreview} 
+                  alt="Preview" 
+                  className="w-full h-48 object-cover rounded-xl"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 h-8 w-8"
+                  onClick={() => {
+                    setSelectedImage(null);
+                    setImagePreview(null);
+                    setDetectedColors([]);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                {isAnalyzing && (
+                  <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center">
+                    <div className="text-white text-center">
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                      <p className="text-sm">Analyzing colors...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-neutral-300 rounded-xl p-8 text-center hover:border-primary transition-colors">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <label htmlFor="image-upload" className="cursor-pointer">
+                  <Camera size={32} className="mx-auto text-neutral-400 mb-4" />
+                  <p className="text-neutral-600">Tap to take photo</p>
+                  <p className="text-sm text-neutral-500 mt-2">or choose from gallery</p>
+                </label>
+              </div>
+            )}
           </div>
 
           {/* Category Selection */}
@@ -191,19 +320,43 @@ export default function AddItemModal({ isOpen, onClose }: AddItemModalProps) {
 
           {/* Color Tags */}
           <div>
-            <Label>Colors</Label>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {colors.map((color) => (
-                <Badge
-                  key={color}
-                  variant={selectedColors.includes(color) ? "default" : "outline"}
-                  className="cursor-pointer capitalize"
-                  onClick={() => toggleTag(color, "color")}
-                >
-                  {color}
-                </Badge>
-              ))}
+            <div className="flex items-center gap-2 mb-2">
+              <Label>Colors</Label>
+              {detectedColors.length > 0 && (
+                <div className="flex items-center gap-1 text-xs text-primary">
+                  <Sparkles className="h-3 w-3" />
+                  <span>AI detected</span>
+                </div>
+              )}
             </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {colors.map((color) => {
+                const isDetected = detectedColors.includes(color);
+                const isSelected = selectedColors.includes(color);
+                return (
+                  <Badge
+                    key={color}
+                    variant={isSelected ? "default" : "outline"}
+                    className={`cursor-pointer capitalize ${
+                      isDetected && !isSelected
+                        ? "ring-2 ring-primary ring-offset-1"
+                        : ""
+                    }`}
+                    onClick={() => toggleTag(color, "color")}
+                  >
+                    {color}
+                    {isDetected && isSelected && (
+                      <Sparkles className="h-3 w-3 ml-1 inline" />
+                    )}
+                  </Badge>
+                );
+              })}
+            </div>
+            {detectedColors.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Colors detected from your photo. Click to select/deselect.
+              </p>
+            )}
           </div>
 
           {/* Season Tags */}
