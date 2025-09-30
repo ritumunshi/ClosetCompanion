@@ -23,12 +23,14 @@ Closet Concierge is a full-stack web application built with a modern tech stack 
 - **API Design**: RESTful endpoints with structured error handling
 
 ### Database Schema
-The application uses five main tables:
+The application uses seven main tables:
 - `users`: User authentication and profile data
 - `clothing_items`: Individual wardrobe items with metadata
 - `outfits`: Saved outfit combinations
 - `outfit_history`: Track when outfits were worn
 - `notification_subscriptions`: Push notification subscription data (endpoint, keys)
+- `avatars`: User uploaded avatar photos for dress-up mode
+- `outfit_compositions`: Saved dress-up outfits with positioning data (x, y, scale, rotation)
 
 ## Key Components
 
@@ -57,6 +59,17 @@ The application uses five main tables:
 - **Daily Outfit Suggestions**: Morning notifications with weather-based outfit recommendations
 - **Notification Preferences**: Dedicated page for managing notification settings
 - **Backend Integration**: web-push library for sending notifications to subscribed users
+
+### Dress-Up Mode (Virtual Try-On)
+- **Mannequin System**: SVG-based cartoon body templates (male, female, slim, tall) with stylized silhouettes
+- **Avatar Integration**: Circular face crops from user photos positioned on mannequin heads
+- **Interactive Clothing**: Drag-and-drop positioning for clothing items with real-time overlay
+- **Transform Controls**: Zoom in/out (scale: 0.5x-2.0x) and rotation (-180° to 180°) for each item
+- **Position Tracking**: Each item stores x%, y%, scale, and rotation values
+- **Visual Depth**: Drop-shadow filters applied to clothing overlays for realistic layering
+- **Outfit Compositions**: Save complete outfits with positioning data for later viewing
+- **Persistent Storage**: Body type and item transforms saved to database via outfit_compositions table
+- **Navigation**: Accessible via Profile → Dress-Up Mode
 
 ## Data Flow
 
@@ -159,6 +172,14 @@ Consider integrating a weather API (OpenWeather, WeatherAPI) to automatically de
 Changelog:
 - July 03, 2025. Initial setup
 - September 30, 2025. Added push notification system with web push API, VAPID authentication, notification subscription management, daily outfit suggestion notifications, and service worker for background handling
+- September 30, 2025. Implemented interactive dress-up mode with:
+  - Multiple mannequin body templates (male, female, slim, tall) with SVG-based cartoon silhouettes
+  - Drag-and-drop clothing positioning with real-time overlay
+  - Zoom in/out controls (0.5x-2.0x scale range)
+  - Rotation controls (-180° to 180°)
+  - Drop-shadow visual effects for depth
+  - Outfit composition storage with complete positioning data (x, y, scale, rotation, bodyType)
+  - Outfit compositions display page showing saved dress-up outfits with positioning details
 ```
 
 ## User Preferences
