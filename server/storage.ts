@@ -29,6 +29,9 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByPhone(phone: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserOtp(phone: string, otpCode: string, otpExpiry: Date): Promise<boolean>;
+  verifyUserOtp(phone: string, otpCode: string): Promise<User | null>;
+  markPhoneVerified(userId: number): Promise<boolean>;
   
   getClothingItems(userId: number): Promise<ClothingItem[]>;
   getClothingItem(id: number): Promise<ClothingItem | undefined>;
@@ -102,9 +105,36 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
-    const user: User = { ...insertUser, id, createdAt: new Date() };
+    const user: User = { ...insertUser, id, createdAt: new Date(), phoneVerified: false, otpCode: null, otpExpiry: null };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUserOtp(phone: string, otpCode: string, otpExpiry: Date): Promise<boolean> {
+    const user = await this.getUserByPhone(phone);
+    if (!user) return false;
+    user.otpCode = otpCode;
+    user.otpExpiry = otpExpiry;
+    this.users.set(user.id, user);
+    return true;
+  }
+
+  async verifyUserOtp(phone: string, otpCode: string): Promise<User | null> {
+    const user = await this.getUserByPhone(phone);
+    if (!user || !user.otpCode || !user.otpExpiry) return null;
+    if (user.otpCode !== otpCode) return null;
+    if (new Date() > user.otpExpiry) return null;
+    return user;
+  }
+
+  async markPhoneVerified(userId: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user) return false;
+    user.phoneVerified = true;
+    user.otpCode = null;
+    user.otpExpiry = null;
+    this.users.set(userId, user);
+    return true;
   }
 
   async getClothingItems(userId: number): Promise<ClothingItem[]> {
@@ -289,6 +319,37 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async updateUserOtp(phone: string, otpCode: string, otpExpiry: Date): Promise<boolean> {
+    const result = await db
+      .update(users)
+      .set({ otpCode, otpExpiry })
+      .where(eq(users.phone, phone));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async verifyUserOtp(phone: string, otpCode: string): Promise<User | null> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(
+        eq(users.phone, phone),
+        eq(users.otpCode, otpCode)
+      ));
+    
+    if (!user || !user.otpExpiry) return null;
+    if (new Date() > user.otpExpiry) return null;
+    
+    return user;
+  }
+
+  async markPhoneVerified(userId: number): Promise<boolean> {
+    const result = await db
+      .update(users)
+      .set({ phoneVerified: true, otpCode: null, otpExpiry: null })
+      .where(eq(users.id, userId));
+    return (result.rowCount || 0) > 0;
   }
 
   async getClothingItems(userId: number): Promise<ClothingItem[]> {

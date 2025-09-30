@@ -17,6 +17,7 @@ import path from "path";
 import fs from "fs";
 import webpush from "web-push";
 import bcrypt from "bcryptjs";
+import twilio from "twilio";
 
 // Configure multer for image uploads
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -53,6 +54,25 @@ function ensureWebPushConfigured() {
       console.error('Failed to configure web-push:', error);
     }
   }
+}
+
+// Get Twilio credentials from environment
+const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID || '';
+const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN || '';
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER || '';
+
+// Lazy initialize Twilio client
+let twilioClient: ReturnType<typeof twilio> | null = null;
+function getTwilioClient() {
+  if (!twilioClient && twilioAccountSid && twilioAuthToken) {
+    twilioClient = twilio(twilioAccountSid, twilioAuthToken);
+  }
+  return twilioClient;
+}
+
+// Generate 6-digit OTP
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -143,6 +163,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Login error:', error);
       res.status(500).json({ error: "Login failed" });
+    }
+  });
+
+  // OTP Verification Routes
+  app.post("/api/send-otp", async (req, res) => {
+    try {
+      const { phone } = req.body;
+      
+      if (!phone) {
+        return res.status(400).json({ error: "Phone number is required" });
+      }
+
+      const client = getTwilioClient();
+      if (!client) {
+        return res.status(503).json({ error: "SMS service not configured. Please add Twilio credentials." });
+      }
+
+      // Generate OTP
+      const otpCode = generateOTP();
+      const otpExpiry = new Date();
+      otpExpiry.setMinutes(otpExpiry.getMinutes() + 10); // OTP valid for 10 minutes
+
+      // Store OTP in database
+      await storage.updateUserOtp(phone, otpCode, otpExpiry);
+
+      // Send SMS
+      await client.messages.create({
+        body: `Your Closet Concierge verification code is: ${otpCode}. This code expires in 10 minutes.`,
+        to: phone,
+        from: twilioPhoneNumber
+      });
+
+      res.json({ 
+        message: "OTP sent successfully",
+        expiresIn: 600 // 10 minutes in seconds
+      });
+    } catch (error: any) {
+      console.error('Error sending OTP:', error);
+      res.status(500).json({ error: "Failed to send OTP", details: error.message });
+    }
+  });
+
+  app.post("/api/verify-otp", async (req, res) => {
+    try {
+      const { phone, otp } = req.body;
+      
+      if (!phone || !otp) {
+        return res.status(400).json({ error: "Phone number and OTP are required" });
+      }
+
+      // Verify OTP
+      const user = await storage.verifyUserOtp(phone, otp);
+      
+      if (!user) {
+        return res.status(401).json({ error: "Invalid or expired OTP" });
+      }
+
+      // Mark phone as verified
+      await storage.markPhoneVerified(user.id);
+
+      // Remove sensitive data from response
+      const { password: _, otpCode: __, otpExpiry: ___, ...userWithoutSensitive } = user;
+      
+      res.json({ 
+        message: "Phone number verified successfully",
+        user: userWithoutSensitive
+      });
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      res.status(500).json({ error: "Failed to verify OTP" });
     }
   });
 

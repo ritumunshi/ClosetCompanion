@@ -8,6 +8,9 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   name: text("name").notNull(),
   phone: text("phone").notNull().unique(),
+  phoneVerified: boolean("phone_verified").notNull().default(false),
+  otpCode: text("otp_code"),
+  otpExpiry: timestamp("otp_expiry"),
   email: text("email"),
   createdAt: timestamp("created_at").defaultNow(),
 });
