@@ -10,10 +10,11 @@ Closet Concierge is a full-stack web application built with a modern tech stack 
 - **Framework**: React 18 with TypeScript
 - **Styling**: Tailwind CSS with shadcn/ui component library
 - **State Management**: TanStack Query (React Query) for server state, Auth Context for user session
-- **Routing**: Wouter for client-side routing
+- **Routing**: Wouter for client-side routing with protected routes
 - **Build Tool**: Vite for development and production builds
 - **UI Components**: Radix UI primitives with custom styling
 - **Session Storage**: localStorage for persistent user authentication
+- **Color Scheme**: Soothing lavender-purple background with vibrant accent colors (teal, pink, blue)
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js server
@@ -202,6 +203,17 @@ Changelog:
   - Backend endpoint: POST /api/reset-password for secure password updates
   - Password reset validates OTP before allowing password change
   - All auth flows integrated with existing OTP verification system
+- September 30, 2025. Enhanced app security and user experience:
+  - Added route protection: All app pages require authentication
+  - Unauthenticated users automatically redirected to /auth page
+  - Navigation bar only shows when user is logged in
+  - Help & Support button now opens email to prodmanleeds@gmail.com
+- September 30, 2025. Updated color scheme for improved visual appeal:
+  - Background: Changed to soothing lavender-purple (#F0E8F8 equivalent)
+  - Text colors: Deeper plum/violet tones for better readability
+  - "Add Item" button: Vibrant teal/emerald gradient
+  - Enhanced gradient colors for all action cards
+  - Overall warmer, more inviting color palette
 ```
 
 ## User Preferences
