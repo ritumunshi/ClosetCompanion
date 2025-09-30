@@ -9,10 +9,11 @@ Closet Concierge is a full-stack web application built with a modern tech stack 
 ### Frontend Architecture
 - **Framework**: React 18 with TypeScript
 - **Styling**: Tailwind CSS with shadcn/ui component library
-- **State Management**: TanStack Query (React Query) for server state
+- **State Management**: TanStack Query (React Query) for server state, Auth Context for user session
 - **Routing**: Wouter for client-side routing
 - **Build Tool**: Vite for development and production builds
 - **UI Components**: Radix UI primitives with custom styling
+- **Session Storage**: localStorage for persistent user authentication
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js server
@@ -73,7 +74,12 @@ The application uses seven main tables:
 
 ## Data Flow
 
-1. **User Authentication**: Demo user system (ID: 1) for MVP
+1. **User Authentication**: 
+   - Registration with phone number and OTP verification
+   - Login with username/password
+   - Forgot password flow with OTP-based reset
+   - Auth context manages global user state with localStorage persistence
+   - Sign out clears session and redirects to auth page
 2. **Clothing Management**: 
    - Add items via form with image upload
    - Store metadata in PostgreSQL
@@ -188,6 +194,14 @@ Changelog:
   - Backend endpoints: /api/send-otp and /api/verify-otp
   - Database tracking: otpCode and otpExpiry fields in users table
   - User flow: Register → Receive SMS → Enter code → Verified
+- September 30, 2025. Added authentication state management and password reset:
+  - Created AuthContext (client/src/contexts/auth-context.tsx) for global user state
+  - localStorage persistence for user session across page reloads
+  - Sign out functionality in profile page that clears session and redirects
+  - Forgot password flow with OTP-based password reset
+  - Backend endpoint: POST /api/reset-password for secure password updates
+  - Password reset validates OTP before allowing password change
+  - All auth flows integrated with existing OTP verification system
 ```
 
 ## User Preferences
