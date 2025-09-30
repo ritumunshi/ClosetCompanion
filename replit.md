@@ -76,9 +76,10 @@ The application uses seven main tables:
 ## Data Flow
 
 1. **User Authentication**: 
-   - Registration with phone number and OTP verification
+   - Registration with email or phone (at least one required) - no OTP verification
+   - Users are immediately logged in after successful registration
    - Login with username/password
-   - Forgot password flow with OTP-based reset
+   - Forgot password flow with OTP-based reset (requires phone number)
    - Auth context manages global user state with localStorage persistence
    - Sign out clears session and redirects to auth page
 2. **Clothing Management**: 
@@ -220,6 +221,14 @@ Changelog:
   - Differentiated background colors: white for auth pages, lavender-purple for logged-in pages
   - Removed gradient backgrounds from auth flows for cleaner look
   - Login automatically redirects to home page
+- October 1, 2025. Simplified registration flow:
+  - Removed OTP verification requirement from signup process
+  - Users can now sign up with email OR phone (at least one required)
+  - Phone field made nullable in database schema (no longer unique constraint)
+  - Users are immediately logged in after successful registration
+  - Automatic redirect to home page after signup
+  - OTP verification retained for password reset functionality only
+  - Backend validation ensures at least email or phone is provided
 ```
 
 ## User Preferences
