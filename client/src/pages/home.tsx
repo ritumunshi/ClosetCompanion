@@ -71,13 +71,13 @@ export default function Home() {
 
           {/* Add Clothing Card */}
           <Card 
-            className="bg-white rounded-2xl p-6 border border-neutral-200 hover-lift cursor-pointer"
+            className="teal-accent rounded-2xl p-6 border-0 text-white hover-lift cursor-pointer"
             onClick={() => setShowAddModal(true)}
           >
             <div className="flex flex-col items-center text-center">
-              <Plus size={32} className="text-primary mb-3" />
-              <h3 className="font-semibold text-lg text-neutral-800">Add Item</h3>
-              <p className="text-sm text-neutral-600">To Wardrobe</p>
+              <Plus size={32} className="mb-3" />
+              <h3 className="font-semibold text-lg">Add Item</h3>
+              <p className="text-sm opacity-90">To Wardrobe</p>
             </div>
           </Card>
         </div>

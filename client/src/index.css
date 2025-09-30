@@ -3,37 +3,37 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(270, 35%, 95%);
-  --foreground: hsl(270, 15%, 20%);
-  --muted: hsl(270, 30%, 92%);
-  --muted-foreground: hsl(270, 10%, 45%);
-  --popover: hsl(270, 40%, 98%);
-  --popover-foreground: hsl(270, 15%, 20%);
+  --background: hsl(270, 50%, 95%);
+  --foreground: hsl(280, 60%, 25%);
+  --muted: hsl(270, 45%, 90%);
+  --muted-foreground: hsl(280, 40%, 40%);
+  --popover: hsl(270, 45%, 97%);
+  --popover-foreground: hsl(280, 60%, 25%);
   --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(270, 15%, 20%);
-  --border: hsl(270, 20%, 88%);
-  --input: hsl(270, 20%, 88%);
-  --primary: hsl(270, 60%, 75%);
+  --card-foreground: hsl(280, 60%, 25%);
+  --border: hsl(270, 30%, 85%);
+  --input: hsl(270, 30%, 85%);
+  --primary: hsl(270, 60%, 65%);
   --primary-foreground: hsl(0, 0%, 100%);
-  --secondary: hsl(45, 85%, 70%);
-  --secondary-foreground: hsl(270, 15%, 20%);
-  --accent: hsl(320, 70%, 70%);
+  --secondary: hsl(165, 55%, 50%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --accent: hsl(320, 80%, 65%);
   --accent-foreground: hsl(0, 0%, 100%);
   --destructive: hsl(0, 70%, 65%);
   --destructive-foreground: hsl(0, 0%, 100%);
-  --ring: hsl(270, 60%, 75%);
+  --ring: hsl(270, 60%, 65%);
   --radius: 0.5rem;
   
-  --neutral-50: hsl(270, 30%, 97%);
-  --neutral-100: hsl(270, 25%, 94%);
-  --neutral-200: hsl(270, 20%, 88%);
-  --neutral-300: hsl(270, 15%, 80%);
-  --neutral-400: hsl(270, 10%, 60%);
-  --neutral-500: hsl(270, 8%, 45%);
-  --neutral-600: hsl(270, 12%, 35%);
-  --neutral-700: hsl(270, 15%, 25%);
-  --neutral-800: hsl(270, 18%, 18%);
-  --neutral-900: hsl(270, 20%, 12%);
+  --neutral-50: hsl(270, 45%, 96%);
+  --neutral-100: hsl(270, 40%, 92%);
+  --neutral-200: hsl(270, 35%, 85%);
+  --neutral-300: hsl(270, 30%, 75%);
+  --neutral-400: hsl(270, 25%, 55%);
+  --neutral-500: hsl(280, 30%, 40%);
+  --neutral-600: hsl(280, 40%, 30%);
+  --neutral-700: hsl(280, 50%, 22%);
+  --neutral-800: hsl(280, 60%, 18%);
+  --neutral-900: hsl(280, 65%, 12%);
 }
 
 .dark {
@@ -80,19 +80,19 @@
   }
   
   .outfit-card {
-    background: linear-gradient(135deg, hsl(270, 60%, 75%) 0%, hsl(280, 50%, 70%) 100%);
+    background: linear-gradient(135deg, hsl(270, 60%, 65%) 0%, hsl(280, 55%, 60%) 100%);
   }
   
   .suggestion-card {
-    background: linear-gradient(135deg, hsl(320, 70%, 70%) 0%, hsl(330, 65%, 68%) 100%);
+    background: linear-gradient(135deg, hsl(320, 80%, 65%) 0%, hsl(330, 75%, 62%) 100%);
   }
   
   .weather-card {
-    background: linear-gradient(135deg, hsl(210, 75%, 70%) 0%, hsl(220, 80%, 68%) 100%);
+    background: linear-gradient(135deg, hsl(210, 85%, 65%) 0%, hsl(220, 90%, 62%) 100%);
   }
   
   .teal-accent {
-    background: linear-gradient(135deg, hsl(170, 60%, 65%) 0%, hsl(160, 55%, 60%) 100%);
+    background: linear-gradient(135deg, hsl(165, 70%, 55%) 0%, hsl(160, 65%, 50%) 100%);
   }
 }
 

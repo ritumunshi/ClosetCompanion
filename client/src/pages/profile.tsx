@@ -89,6 +89,8 @@ export default function Profile() {
             <Button 
               variant="ghost" 
               className="w-full p-6 justify-start text-left"
+              onClick={() => window.location.href = 'mailto:prodmanleeds@gmail.com?subject=Closet Concierge Support Request'}
+              data-testid="button-help-support"
             >
               <HandHelping size={20} className="mr-3" />
               <span>Help & Support</span>
