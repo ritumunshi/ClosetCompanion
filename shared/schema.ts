@@ -6,6 +6,10 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  name: text("name").notNull(),
+  phone: text("phone").notNull().unique(),
+  email: text("email"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const clothingItems = pgTable("clothing_items", {
@@ -72,9 +76,9 @@ export const outfitCompositions = pgTable("outfit_compositions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertClothingItemSchema = createInsertSchema(clothingItems).omit({

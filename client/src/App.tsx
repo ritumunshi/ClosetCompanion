@@ -12,6 +12,7 @@ import Notifications from "@/pages/notifications";
 import Profile from "@/pages/profile";
 import Avatars from "@/pages/avatars";
 import DressUp from "@/pages/dressup";
+import Auth from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 import { useNotifications } from "@/hooks/useNotifications";
 import { FEATURE_FLAGS } from "@/config/features";
@@ -20,6 +21,7 @@ function Router() {
   return (
     <div className="min-h-screen bg-neutral-50">
       <Switch>
+        <Route path="/auth" component={Auth} />
         <Route path="/" component={Home} />
         <Route path="/wardrobe" component={Wardrobe} />
         <Route path="/outfits" component={Outfits} />

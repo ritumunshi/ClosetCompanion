@@ -24,6 +24,7 @@ export default function AddItemModal({ isOpen, onClose }: AddItemModalProps) {
   const [selectedSeasons, setSelectedSeasons] = useState<string[]>([]);
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
   const [detectedColors, setDetectedColors] = useState<string[]>([]);
+  const [detectedOccasions, setDetectedOccasions] = useState<string[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   
   const { toast } = useToast();
@@ -36,7 +37,11 @@ export default function AddItemModal({ isOpen, onClose }: AddItemModalProps) {
     { value: "accessories", label: "Accessories", icon: Gem },
   ];
 
-  const colors = ["red", "blue", "green", "black", "white", "yellow", "purple", "pink", "brown", "gray"];
+  const colors = [
+    "red", "blue", "green", "black", "white", "yellow", "purple", "pink", "brown", "gray",
+    "navy", "maroon", "olive", "teal", "orange", "beige", "tan", "cream", "burgundy", "khaki",
+    "coral", "turquoise", "lavender", "mint", "peach", "gold", "silver", "charcoal", "ivory"
+  ];
   const seasons = ["spring", "summer", "fall", "winter"];
   const occasions = ["casual", "work", "party", "gym", "formal", "date"];
 
@@ -71,6 +76,7 @@ export default function AddItemModal({ isOpen, onClose }: AddItemModalProps) {
     setSelectedSeasons([]);
     setSelectedOccasions([]);
     setDetectedColors([]);
+    setDetectedOccasions([]);
     onClose();
   };
 
@@ -81,30 +87,81 @@ export default function AddItemModal({ isOpen, onClose }: AddItemModalProps) {
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     const lightness = (max + min) / 2;
+    const saturation = max - min;
     
-    // Very light or very dark
-    if (lightness > 220) return "white";
-    if (lightness < 50) return "black";
-    if (max - min < 25) return "gray";
+    // Very light colors
+    if (lightness > 240) return "white";
+    if (lightness > 220) {
+      if (r > 230 && g > 220 && b < 200) return "cream";
+      if (r > 230 && g > 220 && b > 210) return "ivory";
+      return "white";
+    }
     
-    // Determine dominant color
+    // Very dark colors
+    if (lightness < 40) return "black";
+    if (lightness < 60) {
+      if (r > g && r > b && r < 60) return "maroon";
+      if (b > r && b > g) return "navy";
+      return "charcoal";
+    }
+    
+    // Low saturation (grayscale/neutral)
+    if (saturation < 25) {
+      if (lightness > 180) return "gray";
+      if (lightness > 120) return "gray";
+      return "charcoal";
+    }
+    
+    // Mid-range saturation (muted colors)
+    if (saturation < 60) {
+      if (r > g && r > b) {
+        if (lightness > 150) return "beige";
+        return "tan";
+      }
+      if (g > r && g > b) {
+        if (lightness > 150) return "mint";
+        return "olive";
+      }
+      if (lightness > 140) return "beige";
+      return "khaki";
+    }
+    
+    // Determine dominant saturated colors
     if (r > g && r > b) {
-      if (g > b && r - g < 50) return "yellow";
-      if (b > 100) return "purple";
-      if (lightness > 150) return "pink";
+      if (g > 150 && r - g < 50) return "orange";
+      if (g > 100 && r - g < 80) return "coral";
+      if (b > 100 && r - b < 80) {
+        if (lightness > 150) return "pink";
+        return "purple";
+      }
+      if (lightness > 180) return "pink";
+      if (lightness > 150) return "peach";
+      if (lightness < 100) return "maroon";
       return "red";
     }
+    
     if (g > r && g > b) {
-      if (r > b && g - r < 50) return "yellow";
-      if (b > 100) return "green";
+      if (r > 150 && g - r < 50) return "yellow";
+      if (r > 100 && g - r < 80) return "olive";
+      if (b > 150) return "teal";
+      if (b > 100) return "turquoise";
+      if (lightness > 180) return "mint";
       return "green";
     }
+    
     if (b > r && b > g) {
-      if (r > 100) return "purple";
-      if (g > 100) return "blue";
+      if (r > 120 && b - r < 80) {
+        if (lightness > 150) return "lavender";
+        return "purple";
+      }
+      if (g > 100 && b - g < 60) return "teal";
+      if (lightness < 100) return "navy";
       return "blue";
     }
     
+    // Fallback
+    if (r > 150 && g > 100 && b < 100) return "orange";
+    if (r > 180 && g > 150 && b > 100) return "gold";
     return "brown";
   };
 
@@ -142,6 +199,61 @@ export default function AddItemModal({ isOpen, onClose }: AddItemModalProps) {
             } else {
               setSelectedSeasons(prev => Array.from(new Set([...prev, "fall", "winter"])));
             }
+            
+            // Suggest occasions based on colors (internal AI logic)
+            const suggestedOccasions = [];
+            
+            // Neutral colors suggest work/formal
+            const hasNeutral = colorNames.some(c => 
+              ['black', 'white', 'gray', 'navy', 'charcoal', 'beige'].includes(c)
+            );
+            if (hasNeutral) {
+              suggestedOccasions.push('work');
+            }
+            
+            // Dark/formal colors suggest formal occasions
+            const hasFormalColors = colorNames.some(c => 
+              ['black', 'navy', 'burgundy', 'maroon', 'charcoal'].includes(c)
+            );
+            if (hasFormalColors) {
+              suggestedOccasions.push('formal');
+            }
+            
+            // Bright/vibrant colors suggest party/casual
+            const hasBrightColors = colorNames.some(c => 
+              ['pink', 'purple', 'orange', 'coral', 'turquoise', 'yellow'].includes(c)
+            );
+            if (hasBrightColors) {
+              suggestedOccasions.push('party', 'casual');
+            }
+            
+            // Comfortable colors suggest gym/casual
+            const hasComfortColors = colorNames.some(c => 
+              ['gray', 'black', 'navy', 'blue'].includes(c)
+            );
+            if (hasComfortColors && !hasFormalColors) {
+              suggestedOccasions.push('gym', 'casual');
+            }
+            
+            // Soft/romantic colors suggest date
+            const hasSoftColors = colorNames.some(c => 
+              ['pink', 'peach', 'lavender', 'cream', 'coral'].includes(c)
+            );
+            if (hasSoftColors) {
+              suggestedOccasions.push('date');
+            }
+            
+            // If no specific suggestions, default to casual
+            if (suggestedOccasions.length === 0) {
+              suggestedOccasions.push('casual');
+            }
+            
+            // Limit to top 3 suggestions
+            const uniqueOccasions = Array.from(new Set(suggestedOccasions.slice(0, 3)));
+            setDetectedOccasions(uniqueOccasions);
+            setSelectedOccasions(prev => 
+              Array.from(new Set([...prev, ...uniqueOccasions]))
+            );
             
             setIsAnalyzing(false);
           } catch (err) {
@@ -378,19 +490,43 @@ export default function AddItemModal({ isOpen, onClose }: AddItemModalProps) {
 
           {/* Occasion Tags */}
           <div>
-            <Label>Occasions</Label>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {occasions.map((occasion) => (
-                <Badge
-                  key={occasion}
-                  variant={selectedOccasions.includes(occasion) ? "default" : "outline"}
-                  className="cursor-pointer capitalize"
-                  onClick={() => toggleTag(occasion, "occasion")}
-                >
-                  {occasion}
-                </Badge>
-              ))}
+            <div className="flex items-center gap-2 mb-2">
+              <Label>Occasions</Label>
+              {detectedOccasions.length > 0 && (
+                <div className="flex items-center gap-1 text-xs text-primary">
+                  <Sparkles className="h-3 w-3" />
+                  <span>AI suggested</span>
+                </div>
+              )}
             </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {occasions.map((occasion) => {
+                const isDetected = detectedOccasions.includes(occasion);
+                const isSelected = selectedOccasions.includes(occasion);
+                return (
+                  <Badge
+                    key={occasion}
+                    variant={isSelected ? "default" : "outline"}
+                    className={`cursor-pointer capitalize ${
+                      isDetected && !isSelected
+                        ? "ring-2 ring-primary ring-offset-1"
+                        : ""
+                    }`}
+                    onClick={() => toggleTag(occasion, "occasion")}
+                  >
+                    {occasion}
+                    {isDetected && isSelected && (
+                      <Sparkles className="h-3 w-3 ml-1 inline" />
+                    )}
+                  </Badge>
+                );
+              })}
+            </div>
+            {detectedOccasions.length > 0 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                Occasions suggested based on photo analysis. Click to select/deselect.
+              </p>
+            )}
           </div>
 
           {/* Action Buttons */}

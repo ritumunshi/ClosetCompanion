@@ -8,13 +8,15 @@ import {
   insertOutfitHistorySchema, 
   insertNotificationSubscriptionSchema,
   insertAvatarSchema,
-  insertOutfitCompositionSchema
+  insertOutfitCompositionSchema,
+  insertUserSchema
 } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import webpush from "web-push";
+import bcrypt from "bcryptjs";
 
 // Configure multer for image uploads
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -56,6 +58,93 @@ function ensureWebPushConfigured() {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Mock user ID for demo (in real app, this would come from authentication)
   const DEMO_USER_ID = 1;
+
+  // Authentication Routes
+  app.post("/api/register", async (req, res) => {
+    try {
+      const { username, password, name, phone, email } = req.body;
+      
+      if (!username || !password || !name || !phone) {
+        return res.status(400).json({ error: "Username, password, name, and phone are required" });
+      }
+
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(409).json({ error: "Username already exists" });
+      }
+
+      // Check if phone already exists
+      const existingPhone = await storage.getUserByPhone(phone);
+      if (existingPhone) {
+        return res.status(409).json({ error: "Phone number already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const userData = {
+        username,
+        password: hashedPassword,
+        name,
+        phone,
+        email: email || null
+      };
+
+      const validatedData = insertUserSchema.parse(userData);
+      const user = await storage.createUser(validatedData);
+
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = user;
+      
+      res.json({ 
+        message: "User created successfully", 
+        user: userWithoutPassword 
+      });
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Invalid data", details: error.errors });
+      } else if (error.message?.includes('unique')) {
+        res.status(409).json({ error: "Username or phone already exists" });
+      } else {
+        res.status(500).json({ error: "Failed to create user" });
+      }
+    }
+  });
+
+  app.post("/api/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ error: "Username and password are required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      
+      if (!user) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      
+      if (!passwordMatch) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = user;
+      
+      res.json({ 
+        message: "Login successful", 
+        user: userWithoutPassword 
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ error: "Login failed" });
+    }
+  });
 
   // Clothing Items Routes
   app.get("/api/clothing-items", async (req, res) => {
@@ -262,18 +351,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         accessories: filteredItems.filter(item => item.category === 'accessories')
       };
       
-      // Select one item from each required category
+      // Check if we have enough items to create an outfit
+      if (items.length === 0) {
+        return res.json({
+          suggestion: null,
+          confidenceScore: 0,
+          occasion,
+          weather,
+          message: "No items in your wardrobe yet. Add some clothing items first!"
+        });
+      }
+      
+      // Count available items per category
+      const availableCategories = [
+        itemsByCategory.tops.length > 0,
+        itemsByCategory.bottoms.length > 0,
+        itemsByCategory.shoes.length > 0
+      ].filter(Boolean).length;
+      
+      // If no items matched the criteria, return low confidence
+      if (availableCategories === 0) {
+        return res.json({
+          suggestion: null,
+          confidenceScore: 0,
+          occasion,
+          weather,
+          message: "No matching items found for these conditions. Try different options or add more items!"
+        });
+      }
+      
+      // Need at least 2 core categories (top, bottom, shoes) for a basic outfit
+      if (availableCategories < 2) {
+        return res.json({
+          suggestion: null,
+          confidenceScore: 25,
+          occasion,
+          weather,
+          message: "Limited matches. Add more items for better suggestions!"
+        });
+      }
+      
+      // Select one item from each available required category
       const suggestion = {
-        top: itemsByCategory.tops[Math.floor(Math.random() * itemsByCategory.tops.length)],
-        bottom: itemsByCategory.bottoms[Math.floor(Math.random() * itemsByCategory.bottoms.length)],
-        shoes: itemsByCategory.shoes[Math.floor(Math.random() * itemsByCategory.shoes.length)],
+        top: itemsByCategory.tops.length > 0 ? 
+          itemsByCategory.tops[Math.floor(Math.random() * itemsByCategory.tops.length)] : undefined,
+        bottom: itemsByCategory.bottoms.length > 0 ? 
+          itemsByCategory.bottoms[Math.floor(Math.random() * itemsByCategory.bottoms.length)] : undefined,
+        shoes: itemsByCategory.shoes.length > 0 ? 
+          itemsByCategory.shoes[Math.floor(Math.random() * itemsByCategory.shoes.length)] : undefined,
         accessory: itemsByCategory.accessories.length > 0 ? 
           itemsByCategory.accessories[Math.floor(Math.random() * itemsByCategory.accessories.length)] : null
       };
       
-      // Calculate confidence score
+      // Calculate final available items count
       const availableItems = Object.values(suggestion).filter(Boolean).length;
-      const confidenceScore = Math.min(90, availableItems * 25 + Math.random() * 20);
+      
+      const confidenceScore = Math.min(95, availableItems * 25 + Math.random() * 20);
       
       res.json({
         suggestion,
