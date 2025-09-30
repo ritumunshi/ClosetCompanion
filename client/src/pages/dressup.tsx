@@ -174,13 +174,31 @@ export default function DressUp() {
       if (!outfitName.trim()) throw new Error("Please enter outfit name");
       if (selectedItems.length === 0) throw new Error("Please add at least one clothing item");
 
+      const itemsWithPositions = selectedItems.map(item => {
+        const position = clothingPositions.get(item.id) || getDefaultPosition(item);
+        return {
+          id: item.id,
+          name: item.name,
+          imageUrl: item.imageUrl,
+          category: item.category,
+          x: position.x,
+          y: position.y,
+          scale: position.scale,
+          rotation: position.rotation,
+        };
+      });
+
       const response = await fetch('/api/outfit-compositions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: outfitName,
           avatarId: selectedAvatar.id,
-          items: JSON.stringify(selectedItems.map(item => ({ id: item.id, name: item.name, imageUrl: item.imageUrl }))),
+          userId: 1,
+          items: JSON.stringify({
+            bodyType: bodyType,
+            items: itemsWithPositions,
+          }),
         }),
       });
 

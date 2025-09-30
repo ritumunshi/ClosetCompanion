@@ -6,15 +6,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Palette, Plus, Trash2, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Outfit, ClothingItem } from "@shared/schema";
+import type { Outfit, ClothingItem, OutfitComposition } from "@shared/schema";
 
 export default function Outfits() {
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
+  const [selectedComposition, setSelectedComposition] = useState<OutfitComposition | null>(null);
   const [showOutfitModal, setShowOutfitModal] = useState(false);
+  const [showCompositionModal, setShowCompositionModal] = useState(false);
   const { toast } = useToast();
 
   const { data: outfits = [], isLoading } = useQuery<Outfit[]>({
     queryKey: ['/api/outfits'],
+  });
+
+  const { data: compositions = [], isLoading: isLoadingCompositions } = useQuery<OutfitComposition[]>({
+    queryKey: ['/api/outfit-compositions'],
   });
 
   const { data: items = [] } = useQuery<ClothingItem[]>({
@@ -41,9 +47,34 @@ export default function Outfits() {
     },
   });
 
+  const deleteCompositionMutation = useMutation({
+    mutationFn: async (compositionId: number) => {
+      return apiRequest("DELETE", `/api/outfit-compositions/${compositionId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/outfit-compositions'] });
+      toast({
+        title: "Success!",
+        description: "Outfit composition deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete outfit composition.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleViewOutfit = (outfit: Outfit) => {
     setSelectedOutfit(outfit);
     setShowOutfitModal(true);
+  };
+
+  const handleViewComposition = (composition: OutfitComposition) => {
+    setSelectedComposition(composition);
+    setShowCompositionModal(true);
   };
 
   const handleDeleteOutfit = (outfitId: number) => {
@@ -52,8 +83,23 @@ export default function Outfits() {
     }
   };
 
+  const handleDeleteComposition = (compositionId: number) => {
+    if (confirm("Are you sure you want to delete this outfit composition?")) {
+      deleteCompositionMutation.mutate(compositionId);
+    }
+  };
+
   const getOutfitItems = (itemIds: number[]) => {
     return itemIds.map(id => items.find(item => item.id === id)).filter(Boolean) as ClothingItem[];
+  };
+
+  const parseCompositionItems = (itemsJson: string) => {
+    try {
+      const parsed = JSON.parse(itemsJson);
+      return parsed.items || [];
+    } catch {
+      return [];
+    }
   };
 
   return (
@@ -71,74 +117,135 @@ export default function Outfits() {
       </header>
 
       {/* Outfits Grid */}
-      <div className="max-w-md mx-auto px-4 py-6">
-        {isLoading ? (
-          <div className="grid grid-cols-2 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="aspect-square bg-neutral-200 rounded-xl animate-pulse" />
-            ))}
-          </div>
-        ) : outfits.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4">
-            {outfits.map((outfit) => {
-              const outfitItems = getOutfitItems(outfit.itemIds || []);
-              return (
-                <Card 
-                  key={outfit.id}
-                  className="aspect-square bg-white rounded-xl border border-neutral-200 overflow-hidden hover-lift cursor-pointer relative"
-                  onClick={() => handleViewOutfit(outfit)}
-                >
-                  <div className="w-full h-full bg-gradient-to-br from-neutral-100 to-neutral-200 flex flex-col items-center justify-center p-4">
-                    {outfitItems.length > 0 ? (
-                      <div className="grid grid-cols-2 gap-1 mb-2">
-                        {outfitItems.slice(0, 4).map((item) => (
-                          <div key={item.id} className="w-8 h-8 bg-white rounded border overflow-hidden">
-                            {item.imageUrl ? (
-                              <img 
-                                src={item.imageUrl} 
-                                alt={item.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-neutral-200" />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <Palette size={32} className="text-neutral-400 mb-2" />
-                    )}
-                    <h3 className="font-medium text-neutral-800 text-center text-sm">
-                      {outfit.name}
-                    </h3>
-                    {outfit.occasion && (
-                      <p className="text-xs text-neutral-500 mt-1">
-                        {outfit.occasion}
-                      </p>
-                    )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 w-6 h-6 bg-white/80 hover:bg-white"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteOutfit(outfit.id);
-                    }}
+      <div className="max-w-md mx-auto px-4 py-6 space-y-6">
+        {/* Outfit Compositions Section */}
+        {compositions.length > 0 && (
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Dress-Up Outfits</h2>
+            <div className="grid grid-cols-2 gap-4">
+              {compositions.map((composition) => {
+                const compositionItems = parseCompositionItems(composition.items);
+                return (
+                  <Card 
+                    key={composition.id}
+                    className="aspect-square bg-white rounded-xl border border-neutral-200 overflow-hidden hover-lift cursor-pointer relative"
+                    onClick={() => handleViewComposition(composition)}
+                    data-testid={`card-composition-${composition.id}`}
                   >
-                    <Trash2 size={12} className="text-red-500" />
-                  </Button>
-                </Card>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-neutral-500">
-            <Palette size={48} className="mx-auto mb-4 text-neutral-300" />
-            <p>No outfits created yet.</p>
-            <p className="text-sm mt-2">Go to Home and create outfit suggestions!</p>
+                    <div className="w-full h-full bg-gradient-to-br from-purple-50 to-pink-50 flex flex-col items-center justify-center p-4">
+                      {compositionItems.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-1 mb-2">
+                          {compositionItems.slice(0, 4).map((item: any) => (
+                            <div key={item.id} className="w-8 h-8 bg-white rounded border overflow-hidden">
+                              {item.imageUrl ? (
+                                <img 
+                                  src={item.imageUrl} 
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-neutral-200" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <Palette size={32} className="text-purple-400 mb-2" />
+                      )}
+                      <h3 className="font-medium text-neutral-800 text-center text-sm">
+                        {composition.name}
+                      </h3>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 w-6 h-6 bg-white/80 hover:bg-white"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteComposition(composition.id);
+                      }}
+                      data-testid={`button-delete-composition-${composition.id}`}
+                    >
+                      <Trash2 size={12} className="text-red-500" />
+                    </Button>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         )}
+
+        {/* Regular Outfits Section */}
+        <div>
+          {outfits.length > 0 && <h2 className="text-lg font-semibold mb-4">Suggested Outfits</h2>}
+          {isLoading ? (
+            <div className="grid grid-cols-2 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="aspect-square bg-neutral-200 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : outfits.length > 0 ? (
+            <div className="grid grid-cols-2 gap-4">
+              {outfits.map((outfit) => {
+                const outfitItems = getOutfitItems(outfit.itemIds || []);
+                return (
+                  <Card 
+                    key={outfit.id}
+                    className="aspect-square bg-white rounded-xl border border-neutral-200 overflow-hidden hover-lift cursor-pointer relative"
+                    onClick={() => handleViewOutfit(outfit)}
+                  >
+                    <div className="w-full h-full bg-gradient-to-br from-neutral-100 to-neutral-200 flex flex-col items-center justify-center p-4">
+                      {outfitItems.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-1 mb-2">
+                          {outfitItems.slice(0, 4).map((item) => (
+                            <div key={item.id} className="w-8 h-8 bg-white rounded border overflow-hidden">
+                              {item.imageUrl ? (
+                                <img 
+                                  src={item.imageUrl} 
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-neutral-200" />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <Palette size={32} className="text-neutral-400 mb-2" />
+                      )}
+                      <h3 className="font-medium text-neutral-800 text-center text-sm">
+                        {outfit.name}
+                      </h3>
+                      {outfit.occasion && (
+                        <p className="text-xs text-neutral-500 mt-1">
+                          {outfit.occasion}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 w-6 h-6 bg-white/80 hover:bg-white"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteOutfit(outfit.id);
+                      }}
+                    >
+                      <Trash2 size={12} className="text-red-500" />
+                    </Button>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : compositions.length === 0 && (
+            <div className="text-center py-8 text-neutral-500">
+              <Palette size={48} className="mx-auto mb-4 text-neutral-300" />
+              <p>No outfits created yet.</p>
+              <p className="text-sm mt-2">Go to Home and create outfit suggestions!</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Outfit Detail Modal */}
@@ -208,6 +315,70 @@ export default function Outfits() {
                   }}
                 >
                   Delete Outfit
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Composition Detail Modal */}
+      <Dialog open={showCompositionModal} onOpenChange={setShowCompositionModal}>
+        <DialogContent className="max-w-md mx-4 max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedComposition?.name}</DialogTitle>
+          </DialogHeader>
+
+          {selectedComposition && (
+            <div className="space-y-4">
+              {/* Composition Items */}
+              <div>
+                <h4 className="font-medium text-neutral-800 mb-3">Items in this outfit:</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {parseCompositionItems(selectedComposition.items).map((item: any) => (
+                    <div key={item.id} className="bg-neutral-50 rounded-lg p-3">
+                      {item.imageUrl && (
+                        <div className="aspect-square bg-white rounded-lg overflow-hidden mb-2">
+                          <img 
+                            src={item.imageUrl} 
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <h5 className="font-medium text-sm text-neutral-800">{item.name}</h5>
+                      <p className="text-xs text-neutral-600 capitalize">{item.category}</p>
+                      <div className="text-xs text-neutral-500 mt-1">
+                        <div>Position: {item.x?.toFixed(0)}%, {item.y?.toFixed(0)}%</div>
+                        <div>Scale: {item.scale?.toFixed(2)}x</div>
+                        <div>Rotation: {item.rotation?.toFixed(0)}°</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowCompositionModal(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={() => {
+                    if (selectedComposition) {
+                      handleDeleteComposition(selectedComposition.id);
+                      setShowCompositionModal(false);
+                    }
+                  }}
+                  data-testid="button-confirm-delete-composition"
+                >
+                  Delete
                 </Button>
               </div>
             </div>
