@@ -7,13 +7,17 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import { UserPlus, LogIn, Shield } from "lucide-react";
+import { UserPlus, LogIn, Shield, KeyRound } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [showOtpVerification, setShowOtpVerification] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [otpPhone, setOtpPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [resetPhone, setResetPhone] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -24,13 +28,15 @@ export default function Auth() {
   
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { setUser } = useAuth();
 
   const loginMutation = useMutation({
     mutationFn: async (data: { username: string; password: string }) => {
       const response = await apiRequest("POST", "/api/login", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setUser(data.user);
       toast({
         title: "Success!",
         description: "Welcome back!",
@@ -94,7 +100,8 @@ export default function Auth() {
       const response = await apiRequest("POST", "/api/verify-otp", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      setUser(data.user);
       toast({
         title: "Verified!",
         description: "Your phone number has been verified. Welcome to Closet Concierge!",
@@ -105,6 +112,32 @@ export default function Auth() {
       toast({
         title: "Error",
         description: error.message || "Invalid or expired code",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (data: { phone: string; otp: string; newPassword: string }) => {
+      const response = await apiRequest("POST", "/api/reset-password", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Password Reset!",
+        description: "Your password has been updated. Please login with your new password.",
+      });
+      setShowForgotPassword(false);
+      setShowOtpVerification(false);
+      setResetPhone("");
+      setOtp("");
+      setNewPassword("");
+      setIsLogin(true);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reset password",
         variant: "destructive",
       });
     },
@@ -148,7 +181,33 @@ export default function Auth() {
       });
       return;
     }
-    verifyOtpMutation.mutate({ phone: otpPhone, otp });
+    
+    if (showForgotPassword) {
+      if (!newPassword || newPassword.length < 6) {
+        toast({
+          title: "Error",
+          description: "Password must be at least 6 characters",
+          variant: "destructive",
+        });
+        return;
+      }
+      resetPasswordMutation.mutate({ phone: resetPhone, otp, newPassword });
+    } else {
+      verifyOtpMutation.mutate({ phone: otpPhone, otp });
+    }
+  };
+
+  const handleForgotPassword = () => {
+    if (!resetPhone) {
+      toast({
+        title: "Error",
+        description: "Please enter your phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+    sendOtpMutation.mutate({ phone: resetPhone });
+    setShowOtpVerification(true);
   };
 
   if (showOtpVerification) {
@@ -157,8 +216,12 @@ export default function Auth() {
         <Card className="w-full max-w-md p-8">
           <div className="text-center mb-8">
             <Shield className="h-16 w-16 mx-auto mb-4 text-primary" />
-            <h1 className="text-2xl font-bold text-neutral-800 mb-2">Verify Your Phone</h1>
-            <p className="text-neutral-600">Enter the 6-digit code sent to {otpPhone}</p>
+            <h1 className="text-2xl font-bold text-neutral-800 mb-2">
+              {showForgotPassword ? "Reset Password" : "Verify Your Phone"}
+            </h1>
+            <p className="text-neutral-600">
+              Enter the 6-digit code sent to {showForgotPassword ? resetPhone : otpPhone}
+            </p>
           </div>
 
           <div className="space-y-4">
@@ -176,18 +239,36 @@ export default function Auth() {
               />
             </div>
 
+            {showForgotPassword && (
+              <div>
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  data-testid="input-new-password"
+                />
+              </div>
+            )}
+
             <Button
               onClick={handleVerifyOtp}
               className="w-full"
-              disabled={verifyOtpMutation.isPending}
+              disabled={verifyOtpMutation.isPending || resetPasswordMutation.isPending}
               data-testid="button-verify-otp"
             >
-              {verifyOtpMutation.isPending ? "Verifying..." : "Verify Code"}
+              {(verifyOtpMutation.isPending || resetPasswordMutation.isPending)
+                ? "Please wait..." 
+                : showForgotPassword 
+                  ? "Reset Password" 
+                  : "Verify Code"}
             </Button>
 
             <Button
               variant="outline"
-              onClick={() => sendOtpMutation.mutate({ phone: otpPhone })}
+              onClick={() => sendOtpMutation.mutate({ phone: showForgotPassword ? resetPhone : otpPhone })}
               className="w-full"
               disabled={sendOtpMutation.isPending}
               data-testid="button-resend-otp"
@@ -199,12 +280,64 @@ export default function Auth() {
               variant="ghost"
               onClick={() => {
                 setShowOtpVerification(false);
+                setShowForgotPassword(false);
                 setOtp("");
+                setNewPassword("");
+                setResetPhone("");
               }}
               className="w-full text-neutral-600"
-              data-testid="button-back-to-register"
+              data-testid="button-back-to-login"
             >
-              Back to Registration
+              {showForgotPassword ? "Back to Login" : "Back to Registration"}
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (showForgotPassword && !showOtpVerification) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md p-8">
+          <div className="text-center mb-8">
+            <KeyRound className="h-16 w-16 mx-auto mb-4 text-primary" />
+            <h1 className="text-2xl font-bold text-neutral-800 mb-2">Forgot Password</h1>
+            <p className="text-neutral-600">Enter your phone number to reset your password</p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="resetPhone">Phone Number</Label>
+              <Input
+                id="resetPhone"
+                type="tel"
+                value={resetPhone}
+                onChange={(e) => setResetPhone(e.target.value)}
+                placeholder="+1 (555) 123-4567"
+                data-testid="input-reset-phone"
+              />
+            </div>
+
+            <Button
+              onClick={handleForgotPassword}
+              className="w-full"
+              disabled={sendOtpMutation.isPending}
+              data-testid="button-send-reset-code"
+            >
+              {sendOtpMutation.isPending ? "Sending..." : "Send Reset Code"}
+            </Button>
+
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowForgotPassword(false);
+                setResetPhone("");
+              }}
+              className="w-full text-neutral-600"
+              data-testid="button-back-to-login-from-forgot"
+            >
+              Back to Login
             </Button>
           </div>
         </Card>
@@ -311,6 +444,19 @@ export default function Auth() {
               data-testid="input-password"
             />
           </div>
+
+          {isLogin && (
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-sm text-primary hover:underline"
+                data-testid="link-forgot-password"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
 
           <Button
             type="submit"

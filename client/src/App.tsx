@@ -16,6 +16,7 @@ import Auth from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 import { useNotifications } from "@/hooks/useNotifications";
 import { FEATURE_FLAGS } from "@/config/features";
+import { AuthProvider } from "@/contexts/auth-context";
 
 function Router() {
   return (
@@ -58,11 +59,13 @@ function AutoEnableNotifications() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <AutoEnableNotifications />
-        <Router />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <AutoEnableNotifications />
+          <Router />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
