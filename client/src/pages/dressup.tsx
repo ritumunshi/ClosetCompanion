@@ -174,52 +174,84 @@ export default function DressUp() {
               </Select>
             </div>
 
-            {/* Avatar Preview */}
+            {/* Avatar Preview with Clothing Overlays */}
             {selectedAvatar && (
               <div className="mb-4">
                 <div className="relative aspect-[2/3] max-w-md mx-auto bg-neutral-100 rounded-lg overflow-hidden">
+                  {/* Base Avatar Image */}
                   <img
                     src={selectedAvatar.imageUrl || ''}
                     alt={selectedAvatar.name || 'Avatar'}
                     className="w-full h-full object-cover"
                     data-testid="img-avatar-preview"
                   />
-                </div>
-              </div>
-            )}
-
-            {/* Selected Items */}
-            {selectedItems.length > 0 && (
-              <div className="mt-4">
-                <h3 className="font-semibold mb-2">Selected Items</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {selectedItems.map((item) => (
-                    <Card key={item.id} className="p-2 relative" data-testid={`card-selected-item-${item.id}`}>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-1 right-1 h-6 w-6"
-                        onClick={() => handleRemoveItem(item.id)}
-                        data-testid={`button-remove-item-${item.id}`}
+                  
+                  {/* Clothing Item Overlays */}
+                  {selectedItems.map((item) => {
+                    // Position items based on category
+                    let positionClass = '';
+                    let sizeClass = 'w-2/3';
+                    
+                    if (item.category === 'tops') {
+                      positionClass = 'top-[20%] left-1/2 -translate-x-1/2';
+                      sizeClass = 'w-3/5';
+                    } else if (item.category === 'bottoms') {
+                      positionClass = 'top-[45%] left-1/2 -translate-x-1/2';
+                      sizeClass = 'w-3/5';
+                    } else if (item.category === 'shoes') {
+                      positionClass = 'bottom-[5%] left-1/2 -translate-x-1/2';
+                      sizeClass = 'w-2/5';
+                    } else if (item.category === 'accessories') {
+                      positionClass = 'top-[15%] right-[10%]';
+                      sizeClass = 'w-1/4';
+                    }
+                    
+                    return (
+                      <div
+                        key={item.id}
+                        className={`absolute ${positionClass} ${sizeClass} group`}
+                        data-testid={`overlay-item-${item.id}`}
                       >
-                        <X className="h-4 w-4" />
-                      </Button>
-                      <div className="flex items-center gap-2">
-                        {item.imageUrl && (
-                          <img
-                            src={item.imageUrl}
-                            alt={item.name}
-                            className="w-12 h-12 object-cover rounded"
-                          />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{item.name}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{item.category}</p>
-                        </div>
+                        <img
+                          src={item.imageUrl || ''}
+                          alt={item.name}
+                          className="w-full h-auto object-contain drop-shadow-lg"
+                        />
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleRemoveItem(item.id)}
+                          data-testid={`button-remove-overlay-${item.id}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </Card>
-                  ))}
+                    );
+                  })}
                 </div>
+                
+                {/* Selected Items List */}
+                {selectedItems.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-sm font-semibold mb-2">On Avatar ({selectedItems.length} items)</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedItems.map((item) => (
+                        <div key={item.id} className="inline-flex items-center gap-1 bg-neutral-100 rounded-full px-3 py-1">
+                          <span className="text-xs">{item.name}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-4 w-4 hover:bg-neutral-200 rounded-full"
+                            onClick={() => handleRemoveItem(item.id)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </Card>
