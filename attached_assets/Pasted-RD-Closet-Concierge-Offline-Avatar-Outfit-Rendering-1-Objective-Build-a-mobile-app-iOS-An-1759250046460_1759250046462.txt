@@ -1,0 +1,129 @@
+RD – Closet Concierge (Offline Avatar & Outfit Rendering)
+1. Objective
+
+Build a mobile app (iOS & Android) that lets users:
+
+Upload a face photo (floating head).
+
+Render outfits (shirts, pants, shoes, accessories) onto a mannequin/avatar.
+
+Try outfits locally, with no internet/API dependency.
+
+2. Core Features
+Avatar & Face
+
+User uploads or captures a photo.
+
+Face cropped in circle → shown as floating head.
+
+Saved in “My Avatars” for reuse.
+
+Body Base
+
+Neutral mannequin silhouette (SVG/PNG).
+
+Different body templates (male, female, slim, tall).
+
+Outfit Rendering
+
+Clothing assets (PNG/SVG, transparent background).
+
+Anchored to mannequin body parts:
+
+Torso → shirts/jackets
+
+Legs → pants/skirts
+
+Feet → shoes
+
+Hands → accessories
+
+Clothes resize/warp to fit mannequin using pose anchors.
+
+Interaction
+
+Tap to add/remove items.
+
+Drag to adjust fit.
+
+Smooth transitions (fade-in/out).
+
+Save outfit to “Outfit Library.”
+
+Storage
+
+All assets & avatars stored locally on device.
+
+No external API or cloud storage.
+
+3. Tech Stack
+Mobile Framework
+
+Flutter (cross-platform, easy UI, lightweight).
+
+Alternative: React Native if devs are JS-heavy.
+
+Graphics & Rendering
+
+Canvas / CustomPainter (Flutter) for layering clothes on mannequin.
+
+Support for SVG & transparent PNGs.
+
+On-Device ML (Optional for Smart Fit)
+
+MediaPipe (Pose Landmarks) – lightweight, runs locally.
+
+Detects body keypoints → anchor clothing automatically.
+
+TensorFlow Lite (converted BodyPix) – for body segmentation (warp clothes realistically).
+
+Both frameworks run offline on iOS/Android.
+
+Storage
+
+Local DB (SQLite) for outfit/avatars metadata.
+
+Assets in app bundle + user uploads stored in sandbox storage.
+
+4. Implementation Steps
+Phase 1 – Base System
+
+Build UI (Flutter): Home, My Avatars, Dress-Up Mode, Outfit Library.
+
+Implement face upload & cropper.
+
+Load mannequin silhouette.
+
+Add clothing layering system (manual positioning, no ML).
+
+Phase 2 – Smart Anchoring
+
+Integrate MediaPipe Pose (prebuilt for mobile, offline).
+
+Detect mannequin skeleton → auto-fit clothes to torso/legs/feet.
+
+Apply basic 2D transforms for warping.
+
+Phase 3 – Polish
+
+Add shadows/highlights for depth.
+
+Outfit save/share.
+
+Optimize storage (compress images, cache avatars).
+
+5. Non-Goals (Future)
+
+3D avatars (too heavy for first offline version).
+
+Full AR try-on.
+
+Cloud marketplace for clothes.
+
+6. Success Metrics
+
+User can upload a face and create at least 5 saved outfits offline.
+
+Clothes align within ±10% accuracy of mannequin anchors.
+
+App runs smoothly (<100ms lag) on mid-range smartphones.
