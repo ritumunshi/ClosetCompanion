@@ -14,6 +14,7 @@ import Avatars from "@/pages/avatars";
 import DressUp from "@/pages/dressup";
 import NotFound from "@/pages/not-found";
 import { useNotifications } from "@/hooks/useNotifications";
+import { FEATURE_FLAGS } from "@/config/features";
 
 function Router() {
   return (
@@ -22,8 +23,8 @@ function Router() {
         <Route path="/" component={Home} />
         <Route path="/wardrobe" component={Wardrobe} />
         <Route path="/outfits" component={Outfits} />
-        <Route path="/avatars" component={Avatars} />
-        <Route path="/dressup" component={DressUp} />
+        {FEATURE_FLAGS.AVATARS_ENABLED && <Route path="/avatars" component={Avatars} />}
+        {FEATURE_FLAGS.DRESS_UP_MODE_ENABLED && <Route path="/dressup" component={DressUp} />}
         <Route path="/notifications" component={Notifications} />
         <Route path="/profile" component={Profile} />
         <Route component={NotFound} />

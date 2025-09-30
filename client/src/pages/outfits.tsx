@@ -7,6 +7,7 @@ import { Palette, Plus, Trash2, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Outfit, ClothingItem, OutfitComposition } from "@shared/schema";
+import { FEATURE_FLAGS } from "@/config/features";
 
 export default function Outfits() {
   const [selectedOutfit, setSelectedOutfit] = useState<Outfit | null>(null);
@@ -21,6 +22,7 @@ export default function Outfits() {
 
   const { data: compositions = [], isLoading: isLoadingCompositions } = useQuery<OutfitComposition[]>({
     queryKey: ['/api/outfit-compositions'],
+    enabled: FEATURE_FLAGS.OUTFIT_COMPOSITIONS_ENABLED,
   });
 
   const { data: items = [] } = useQuery<ClothingItem[]>({
@@ -119,7 +121,7 @@ export default function Outfits() {
       {/* Outfits Grid */}
       <div className="max-w-md mx-auto px-4 py-6 space-y-6">
         {/* Outfit Compositions Section */}
-        {compositions.length > 0 && (
+        {FEATURE_FLAGS.OUTFIT_COMPOSITIONS_ENABLED && compositions.length > 0 && (
           <div>
             <h2 className="text-lg font-semibold mb-4">Dress-Up Outfits</h2>
             <div className="grid grid-cols-2 gap-4">
@@ -238,7 +240,7 @@ export default function Outfits() {
                 );
               })}
             </div>
-          ) : compositions.length === 0 && (
+          ) : !FEATURE_FLAGS.OUTFIT_COMPOSITIONS_ENABLED && (
             <div className="text-center py-8 text-neutral-500">
               <Palette size={48} className="mx-auto mb-4 text-neutral-300" />
               <p>No outfits created yet.</p>
