@@ -401,6 +401,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ publicKey: vapidPublicKey });
   });
 
+  // Daily outfit suggestion notification endpoint
+  app.post("/api/daily-outfit-notification", async (req, res) => {
+    try {
+      if (!vapidPublicKey || !vapidPrivateKey) {
+        return res.status(503).json({ error: "Push notifications not configured. VAPID keys missing." });
+      }
+
+      ensureWebPushConfigured();
+
+      const { weather, occasion } = req.body;
+
+      // Get clothing items for the user
+      const items = await storage.getClothingItems(DEMO_USER_ID);
+      const recentHistory = await storage.getRecentOutfitHistory(DEMO_USER_ID, 7);
+
+      if (items.length === 0) {
+        return res.status(404).json({ error: "No clothing items found" });
+      }
+
+      // Simple AI logic for outfit suggestion
+      const recentlyWornItems = new Set(
+        recentHistory.flatMap(h => h.itemIds || [])
+      );
+
+      // Filter items based on occasion and weather
+      const filteredItems = items.filter(item => {
+        const matchesOccasion = !occasion || !item.occasions || item.occasions.includes(occasion);
+        const matchesWeather = !item.seasons || item.seasons.some(season => {
+          if (weather === 'cold') return season === 'winter' || season === 'fall';
+          if (weather === 'warm') return season === 'summer' || season === 'spring';
+          if (weather === 'rainy') return season === 'fall' || season === 'winter';
+          return true;
+        });
+        const notRecentlyWorn = !recentlyWornItems.has(item.id);
+
+        return matchesOccasion && matchesWeather && notRecentlyWorn;
+      });
+
+      // Group by category
+      const itemsByCategory = {
+        tops: filteredItems.filter(item => item.category === 'tops'),
+        bottoms: filteredItems.filter(item => item.category === 'bottoms'),
+        shoes: filteredItems.filter(item => item.category === 'shoes'),
+        accessories: filteredItems.filter(item => item.category === 'accessories')
+      };
+
+      // Select one item from each category
+      const top = itemsByCategory.tops[Math.floor(Math.random() * itemsByCategory.tops.length)];
+      const bottom = itemsByCategory.bottoms[Math.floor(Math.random() * itemsByCategory.bottoms.length)];
+      const shoes = itemsByCategory.shoes[Math.floor(Math.random() * itemsByCategory.shoes.length)];
+
+      if (!top || !bottom || !shoes) {
+        return res.status(404).json({ error: "Not enough items to create a complete outfit" });
+      }
+
+      // Create notification message
+      const outfitDescription = `${top.name}, ${bottom.name}, and ${shoes.name}`;
+      const weatherEmoji = weather === 'cold' ? '❄️' : weather === 'warm' ? '☀️' : weather === 'rainy' ? '🌧️' : '☁️';
+
+      const notificationPayload = {
+        title: `${weatherEmoji} Your Daily Outfit`,
+        body: `Today's suggestion: ${outfitDescription}`,
+        data: {
+          url: '/',
+          outfitItems: [top.id, bottom.id, shoes.id]
+        }
+      };
+
+      // Send notification to all subscriptions
+      const subscriptions = await storage.getNotificationSubscriptions(DEMO_USER_ID);
+
+      if (subscriptions.length === 0) {
+        return res.status(404).json({ error: "No active subscriptions found" });
+      }
+
+      const payload = JSON.stringify(notificationPayload);
+
+      const results = await Promise.allSettled(
+        subscriptions.map((sub) =>
+          webpush.sendNotification({
+            endpoint: sub.endpoint,
+            keys: {
+              p256dh: sub.p256dh,
+              auth: sub.auth
+            }
+          }, payload).then(() => ({ status: 'success' as const }))
+          .catch((error: any) => ({ status: 'error' as const, error, subId: sub.id }))
+        )
+      );
+
+      // Remove subscriptions that permanently failed
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value.status === 'error') {
+          const error = result.value.error;
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            const subId = result.value.subId;
+            await storage.deleteNotificationSubscription(subId);
+            console.log(`Removed invalid subscription ${subId}`);
+          }
+        }
+      }
+
+      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.status === 'success').length;
+      const failCount = results.length - successCount;
+
+      res.json({
+        success: true,
+        sent: successCount,
+        failed: failCount,
+        outfit: {
+          top: top.name,
+          bottom: bottom.name,
+          shoes: shoes.name
+        }
+      });
+    } catch (error) {
+      console.error('Error sending daily outfit notification:', error);
+      res.status(500).json({ error: "Failed to send daily outfit notification" });
+    }
+  });
+
   // Serve uploaded images
   app.use("/uploads", express.static(uploadDir));
 
