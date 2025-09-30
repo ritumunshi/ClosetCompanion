@@ -23,11 +23,12 @@ Closet Concierge is a full-stack web application built with a modern tech stack 
 - **API Design**: RESTful endpoints with structured error handling
 
 ### Database Schema
-The application uses four main tables:
+The application uses five main tables:
 - `users`: User authentication and profile data
 - `clothing_items`: Individual wardrobe items with metadata
 - `outfits`: Saved outfit combinations
 - `outfit_history`: Track when outfits were worn
+- `notification_subscriptions`: Push notification subscription data (endpoint, keys)
 
 ## Key Components
 
@@ -49,6 +50,14 @@ The application uses four main tables:
 - **Modal System**: Add items and view outfit suggestions via modals
 - **Toast Notifications**: User feedback for actions and errors
 
+### Push Notifications System
+- **Web Push API**: Browser-native push notifications using VAPID authentication
+- **Service Worker**: Background notification handling in `public/sw.js`
+- **Subscription Management**: Users can enable/disable notifications from settings
+- **Daily Outfit Suggestions**: Morning notifications with weather-based outfit recommendations
+- **Notification Preferences**: Dedicated page for managing notification settings
+- **Backend Integration**: web-push library for sending notifications to subscribed users
+
 ## Data Flow
 
 1. **User Authentication**: Demo user system (ID: 1) for MVP
@@ -69,6 +78,7 @@ The application uses four main tables:
 - **ORM**: Drizzle ORM with Drizzle Kit for migrations
 - **Validation**: Zod for schema validation
 - **File Storage**: Local file system for image uploads
+- **Push Notifications**: web-push library with VAPID authentication
 
 ### Frontend Dependencies
 - **UI Library**: Radix UI components with shadcn/ui styling
@@ -100,12 +110,55 @@ The application uses four main tables:
 - **Database URL**: Required environment variable
 - **File Uploads**: Configurable upload directory
 - **CORS**: Configured for development and production
+- **VAPID Keys**: Required for push notifications (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`)
+
+## Scheduling Daily Notifications
+
+The application includes a `/api/daily-outfit-notification` endpoint that sends weather-based outfit suggestions to subscribed users. To schedule this for daily delivery:
+
+### Manual Testing
+```bash
+# Test notification with warm weather
+curl -X POST http://localhost:5000/api/daily-outfit-notification \
+  -H "Content-Type: application/json" \
+  -d '{"weather":"warm","occasion":"casual"}'
+```
+
+### Production Scheduling Options
+
+1. **Replit Deployments (Cron)**:
+   - Use Replit's built-in cron functionality to schedule daily notifications
+   - Set trigger time (e.g., 8:00 AM local time)
+   - Example cron expression: `0 8 * * *` for daily at 8 AM
+
+2. **External Cron Service** (e.g., cron-job.org, EasyCron):
+   - Create a scheduled HTTP POST request to the endpoint
+   - Configure authentication if needed
+   - Set timezone and frequency
+
+3. **Node.js Scheduler** (node-cron):
+   - Install: `npm install node-cron`
+   - Add to server code:
+   ```javascript
+   import cron from 'node-cron';
+   
+   // Schedule daily at 8 AM
+   cron.schedule('0 8 * * *', async () => {
+     // Get current weather from API or use default
+     const weather = 'warm'; // Could integrate weather API
+     await sendDailyOutfitNotification(weather);
+   });
+   ```
+
+### Weather Integration (Future Enhancement)
+Consider integrating a weather API (OpenWeather, WeatherAPI) to automatically determine the weather condition for more accurate outfit suggestions.
 
 ## Changelog
 
 ```
 Changelog:
 - July 03, 2025. Initial setup
+- September 30, 2025. Added push notification system with web push API, VAPID authentication, notification subscription management, daily outfit suggestion notifications, and service worker for background handling
 ```
 
 ## User Preferences
