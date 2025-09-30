@@ -3,37 +3,37 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(210, 20%, 98%);
-  --foreground: hsl(222, 13%, 13%);
-  --muted: hsl(210, 40%, 96%);
-  --muted-foreground: hsl(215, 13%, 45%);
-  --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(222, 13%, 13%);
+  --background: hsl(270, 35%, 95%);
+  --foreground: hsl(270, 15%, 20%);
+  --muted: hsl(270, 30%, 92%);
+  --muted-foreground: hsl(270, 10%, 45%);
+  --popover: hsl(270, 40%, 98%);
+  --popover-foreground: hsl(270, 15%, 20%);
   --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(222, 13%, 13%);
-  --border: hsl(214, 32%, 91%);
-  --input: hsl(214, 32%, 91%);
-  --primary: hsl(246, 83%, 68%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(38, 92%, 50%);
-  --secondary-foreground: hsl(222, 13%, 13%);
-  --accent: hsl(330, 81%, 60%);
-  --accent-foreground: hsl(210, 40%, 98%);
-  --destructive: hsl(0, 84%, 60%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(222, 13%, 13%);
+  --card-foreground: hsl(270, 15%, 20%);
+  --border: hsl(270, 20%, 88%);
+  --input: hsl(270, 20%, 88%);
+  --primary: hsl(270, 60%, 75%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(45, 85%, 70%);
+  --secondary-foreground: hsl(270, 15%, 20%);
+  --accent: hsl(320, 70%, 70%);
+  --accent-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 70%, 65%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --ring: hsl(270, 60%, 75%);
   --radius: 0.5rem;
   
-  --neutral-50: hsl(210, 20%, 98%);
-  --neutral-100: hsl(220, 14%, 96%);
-  --neutral-200: hsl(220, 13%, 91%);
-  --neutral-300: hsl(216, 12%, 84%);
-  --neutral-400: hsl(218, 11%, 65%);
-  --neutral-500: hsl(220, 9%, 46%);
-  --neutral-600: hsl(215, 14%, 34%);
-  --neutral-700: hsl(217, 19%, 27%);
-  --neutral-800: hsl(215, 28%, 17%);
-  --neutral-900: hsl(221, 39%, 11%);
+  --neutral-50: hsl(270, 30%, 97%);
+  --neutral-100: hsl(270, 25%, 94%);
+  --neutral-200: hsl(270, 20%, 88%);
+  --neutral-300: hsl(270, 15%, 80%);
+  --neutral-400: hsl(270, 10%, 60%);
+  --neutral-500: hsl(270, 8%, 45%);
+  --neutral-600: hsl(270, 12%, 35%);
+  --neutral-700: hsl(270, 15%, 25%);
+  --neutral-800: hsl(270, 18%, 18%);
+  --neutral-900: hsl(270, 20%, 12%);
 }
 
 .dark {
@@ -80,15 +80,19 @@
   }
   
   .outfit-card {
-    background: linear-gradient(135deg, hsl(246, 83%, 68%) 0%, hsl(264, 50%, 60%) 100%);
+    background: linear-gradient(135deg, hsl(270, 60%, 75%) 0%, hsl(280, 50%, 70%) 100%);
   }
   
   .suggestion-card {
-    background: linear-gradient(135deg, hsl(330, 81%, 60%) 0%, hsl(349, 80%, 57%) 100%);
+    background: linear-gradient(135deg, hsl(320, 70%, 70%) 0%, hsl(330, 65%, 68%) 100%);
   }
   
   .weather-card {
-    background: linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(212, 100%, 50%) 100%);
+    background: linear-gradient(135deg, hsl(210, 75%, 70%) 0%, hsl(220, 80%, 68%) 100%);
+  }
+  
+  .teal-accent {
+    background: linear-gradient(135deg, hsl(170, 60%, 65%) 0%, hsl(160, 55%, 60%) 100%);
   }
 }
 
