@@ -1,8 +1,8 @@
-# Closet Concierge Web Application
+# ATTIRELY Web Application
 
 ## Overview
 
-Closet Concierge is a full-stack web application built with a modern tech stack that helps users manage their wardrobe and get outfit suggestions. The application features a React frontend with TypeScript, an Express.js backend, and uses PostgreSQL with Drizzle ORM for data persistence. The system includes AI-powered outfit recommendations based on user preferences, weather, and occasion.
+ATTIRELY (formerly Closet Concierge) is a full-stack web application built with a modern tech stack that helps users manage their wardrobe and get outfit suggestions. The application features a React frontend with TypeScript, an Express.js backend, and uses PostgreSQL with Drizzle ORM for data persistence. The system includes AI-powered outfit recommendations based on user preferences, weather, and occasion.
 
 ## System Architecture
 
@@ -214,6 +214,12 @@ Changelog:
   - "Add Item" button: Vibrant teal/emerald gradient
   - Enhanced gradient colors for all action cards
   - Overall warmer, more inviting color palette
+- October 1, 2025. Branding and UX improvements:
+  - Rebranded app from "Closet Concierge" to "ATTIRELY"
+  - Added logo to auth page and home header
+  - Differentiated background colors: white for auth pages, lavender-purple for logged-in pages
+  - Removed gradient backgrounds from auth flows for cleaner look
+  - Login automatically redirects to home page
 ```
 
 ## User Preferences
