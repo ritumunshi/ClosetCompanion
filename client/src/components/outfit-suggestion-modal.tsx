@@ -184,7 +184,7 @@ export default function OutfitSuggestionModal({ isOpen, onClose }: OutfitSuggest
           </Button>
 
           {/* Suggested Outfit */}
-          {suggestion && (
+          {suggestion && suggestion.suggestion && (
             <div className="fade-in">
               <h3 className="text-lg font-semibold text-neutral-800 mb-4">Perfect Match!</h3>
               
@@ -254,6 +254,26 @@ export default function OutfitSuggestionModal({ isOpen, onClose }: OutfitSuggest
                 </Button>
               </div>
             </div>
+          )}
+          
+          {/* No Outfit Available */}
+          {suggestion && !suggestion.suggestion && (
+            <Card className="bg-neutral-50 rounded-xl p-6 text-center fade-in">
+              <Shirt size={48} className="text-neutral-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-neutral-800 mb-2">No Outfit Available</h3>
+              <p className="text-sm text-neutral-600 mb-4">
+                {suggestion.confidenceScore === 0 
+                  ? "You don't have enough clothing items yet. Add some items to your wardrobe first!" 
+                  : "We couldn't find a suitable outfit combination. Try adding more items or adjusting your preferences."}
+              </p>
+              <Button 
+                variant="outline" 
+                onClick={handleClose}
+                className="w-full"
+              >
+                Close
+              </Button>
+            </Card>
           )}
         </div>
       </DialogContent>
