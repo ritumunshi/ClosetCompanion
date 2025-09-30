@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -16,23 +16,35 @@ import Auth from "@/pages/auth";
 import NotFound from "@/pages/not-found";
 import { useNotifications } from "@/hooks/useNotifications";
 import { FEATURE_FLAGS } from "@/config/features";
-import { AuthProvider } from "@/contexts/auth-context";
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
+
+function ProtectedRoute({ component: Component, ...rest }: { component: any; path: string }) {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Redirect to="/auth" />;
+  }
+
+  return <Route {...rest} component={Component} />;
+}
 
 function Router() {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="min-h-screen bg-neutral-50">
       <Switch>
         <Route path="/auth" component={Auth} />
-        <Route path="/" component={Home} />
-        <Route path="/wardrobe" component={Wardrobe} />
-        <Route path="/outfits" component={Outfits} />
-        {FEATURE_FLAGS.AVATARS_ENABLED && <Route path="/avatars" component={Avatars} />}
-        {FEATURE_FLAGS.DRESS_UP_MODE_ENABLED && <Route path="/dressup" component={DressUp} />}
-        <Route path="/notifications" component={Notifications} />
-        <Route path="/profile" component={Profile} />
+        <ProtectedRoute path="/" component={Home} />
+        <ProtectedRoute path="/wardrobe" component={Wardrobe} />
+        <ProtectedRoute path="/outfits" component={Outfits} />
+        {FEATURE_FLAGS.AVATARS_ENABLED && <ProtectedRoute path="/avatars" component={Avatars} />}
+        {FEATURE_FLAGS.DRESS_UP_MODE_ENABLED && <ProtectedRoute path="/dressup" component={DressUp} />}
+        <ProtectedRoute path="/notifications" component={Notifications} />
+        <ProtectedRoute path="/profile" component={Profile} />
         <Route component={NotFound} />
       </Switch>
-      <Navigation />
+      {isAuthenticated && <Navigation />}
     </div>
   );
 }
