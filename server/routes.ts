@@ -331,8 +331,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Filter items based on occasion and weather
       const filteredItems = items.filter(item => {
-        const matchesOccasion = !item.occasions || item.occasions.includes(occasion);
-        const matchesWeather = !item.seasons || item.seasons.some(season => {
+        const matchesOccasion = !item.occasions || item.occasions.length === 0 || item.occasions.includes(occasion);
+        const matchesWeather = !item.seasons || item.seasons.length === 0 || item.seasons.some(season => {
           if (weather === 'cold') return season === 'winter' || season === 'fall';
           if (weather === 'warm') return season === 'summer' || season === 'spring';
           if (weather === 'rainy') return season === 'fall' || season === 'winter';
