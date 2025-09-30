@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Avatar, ClothingItem } from "@shared/schema";
@@ -40,12 +40,12 @@ export default function DressUp() {
   };
 
   // Set default avatar on mount
-  useState(() => {
+  useEffect(() => {
     const defaultAvatar = avatars.find(a => a.isDefault) || avatars[0];
     if (defaultAvatar && !selectedAvatar) {
       setSelectedAvatar(defaultAvatar);
     }
-  });
+  }, [avatars, selectedAvatar]);
 
   const handleAddItem = (item: ClothingItem) => {
     if (selectedItems.find(i => i.id === item.id)) {
