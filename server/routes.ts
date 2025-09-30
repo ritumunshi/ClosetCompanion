@@ -2,7 +2,14 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClothingItemSchema, insertOutfitSchema, insertOutfitHistorySchema, insertNotificationSubscriptionSchema } from "@shared/schema";
+import { 
+  insertClothingItemSchema, 
+  insertOutfitSchema, 
+  insertOutfitHistorySchema, 
+  insertNotificationSubscriptionSchema,
+  insertAvatarSchema,
+  insertOutfitCompositionSchema
+} from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -276,6 +283,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to generate outfit suggestion" });
+    }
+  });
+
+  // Avatar Routes
+  app.get("/api/avatars", async (req, res) => {
+    try {
+      const avatars = await storage.getAvatars(DEMO_USER_ID);
+      res.json(avatars);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch avatars" });
+    }
+  });
+
+  app.post("/api/avatars", upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Image file is required" });
+      }
+
+      const avatarData = {
+        userId: DEMO_USER_ID,
+        imageUrl: `/uploads/${req.file.filename}`,
+        name: req.body.name || 'My Avatar',
+        isDefault: req.body.isDefault === 'true' || false
+      };
+
+      const validatedData = insertAvatarSchema.parse(avatarData);
+      
+      // If this is set as default, unset other defaults
+      if (validatedData.isDefault) {
+        const existingAvatars = await storage.getAvatars(DEMO_USER_ID);
+        for (const avatar of existingAvatars) {
+          if (avatar.isDefault) {
+            await storage.updateAvatar(avatar.id, { isDefault: false });
+          }
+        }
+      }
+
+      const avatar = await storage.createAvatar(validatedData);
+      res.json(avatar);
+    } catch (error) {
+      console.error('Error creating avatar:', error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Invalid data", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Failed to create avatar" });
+      }
+    }
+  });
+
+  app.patch("/api/avatars/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      // If setting as default, unset other defaults
+      if (updates.isDefault) {
+        const existingAvatars = await storage.getAvatars(DEMO_USER_ID);
+        for (const avatar of existingAvatars) {
+          if (avatar.isDefault && avatar.id !== id) {
+            await storage.updateAvatar(avatar.id, { isDefault: false });
+          }
+        }
+      }
+
+      const avatar = await storage.updateAvatar(id, updates);
+      if (!avatar) {
+        return res.status(404).json({ error: "Avatar not found" });
+      }
+      
+      res.json(avatar);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update avatar" });
+    }
+  });
+
+  app.delete("/api/avatars/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const avatar = await storage.getAvatar(id);
+      
+      if (!avatar) {
+        return res.status(404).json({ error: "Avatar not found" });
+      }
+
+      // Delete the file from disk
+      if (avatar.imageUrl) {
+        // Remove leading slash from imageUrl for correct path resolution
+        const relativePath = avatar.imageUrl.startsWith('/') ? avatar.imageUrl.slice(1) : avatar.imageUrl;
+        const filePath = path.join(process.cwd(), relativePath);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+
+      const deleted = await storage.deleteAvatar(id);
+      res.json({ success: deleted });
+    } catch (error) {
+      console.error('Error deleting avatar:', error);
+      res.status(500).json({ error: "Failed to delete avatar" });
+    }
+  });
+
+  // Outfit Composition Routes
+  app.get("/api/outfit-compositions", async (req, res) => {
+    try {
+      const compositions = await storage.getOutfitCompositions(DEMO_USER_ID);
+      res.json(compositions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch outfit compositions" });
+    }
+  });
+
+  app.post("/api/outfit-compositions", async (req, res) => {
+    try {
+      const validatedData = insertOutfitCompositionSchema.parse({
+        ...req.body,
+        userId: DEMO_USER_ID
+      });
+      
+      const composition = await storage.createOutfitComposition(validatedData);
+      res.json(composition);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Invalid data", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Failed to create outfit composition" });
+      }
+    }
+  });
+
+  app.patch("/api/outfit-compositions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const composition = await storage.updateOutfitComposition(id, updates);
+      if (!composition) {
+        return res.status(404).json({ error: "Composition not found" });
+      }
+      
+      res.json(composition);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update outfit composition" });
+    }
+  });
+
+  app.delete("/api/outfit-compositions/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const deleted = await storage.deleteOutfitComposition(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Composition not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete outfit composition" });
     }
   });
 
