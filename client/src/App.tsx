@@ -7,6 +7,7 @@ import Navigation from "@/components/navigation";
 import Home from "@/pages/home";
 import Wardrobe from "@/pages/wardrobe";
 import Outfits from "@/pages/outfits";
+import Notifications from "@/pages/notifications";
 import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
@@ -17,6 +18,7 @@ function Router() {
         <Route path="/" component={Home} />
         <Route path="/wardrobe" component={Wardrobe} />
         <Route path="/outfits" component={Outfits} />
+        <Route path="/notifications" component={Notifications} />
         <Route path="/profile" component={Profile} />
         <Route component={NotFound} />
       </Switch>
