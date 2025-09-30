@@ -1,4 +1,5 @@
 import { Switch, Route } from "wouter";
+import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,6 +11,7 @@ import Outfits from "@/pages/outfits";
 import Notifications from "@/pages/notifications";
 import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
+import { useNotifications } from "@/hooks/useNotifications";
 
 function Router() {
   return (
@@ -27,11 +29,31 @@ function Router() {
   );
 }
 
+function AutoEnableNotifications() {
+  const { isSupported, isSubscribed, subscribe } = useNotifications();
+
+  useEffect(() => {
+    // Check if we should auto-enable notifications
+    const hasPrompted = localStorage.getItem('notification-prompted');
+    
+    if (isSupported && !isSubscribed && !hasPrompted) {
+      // Mark as prompted so we don't ask repeatedly
+      localStorage.setItem('notification-prompted', 'true');
+      
+      // Automatically subscribe (will prompt for permission)
+      subscribe();
+    }
+  }, [isSupported, isSubscribed, subscribe]);
+
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        <AutoEnableNotifications />
         <Router />
       </TooltipProvider>
     </QueryClientProvider>
