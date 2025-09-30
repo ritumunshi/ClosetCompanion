@@ -1,0 +1,125 @@
+🎯 Goal
+
+Enable users to see outfits on themselves by uploading their own body photo (or avatar). Instead of just placing clothes on a blank canvas, they can drag and drop clothing items onto their photo for a more realistic “try-on” experience.
+
+🧩 Feature Description
+🔹 1. Avatar / User Photo
+
+Users upload one or more photos of themselves (front-facing, neutral pose).
+
+Option to crop/adjust to a standard silhouette frame.
+
+Avatar/photo stored locally (private, editable, deletable).
+
+🔹 2. Clothing Overlay
+
+Items from wardrobe are extracted as transparent PNGs (when user adds clothing, background is removed manually or with a simple on-device masking tool).
+
+In the “Dress-Up Mode”:
+
+Clothing images can be dragged, resized, rotated, and layered on top of the user’s photo.
+
+Z-index control (e.g., shirt behind jacket).
+
+🔹 3. Outfit Assembly Workflow
+
+User enters Dress-Up Mode.
+
+Select a base photo/avatar.
+
+Drag clothing pieces from closet → onto avatar.
+
+Adjust position, scale, layering.
+
+Save the look to Outfit Library.
+
+🔹 4. Outfit Library
+
+Saved outfits are linked to:
+
+Items used (item IDs).
+
+User photo/avatar snapshot.
+
+Metadata (occasion, season, title, notes).
+
+Users can edit or delete outfits later.
+
+🔹 5. Advanced Editing (Future Scope, not MVP)
+
+Multiple poses/avatars.
+
+Auto-fit scaling (clothes align to body automatically).
+
+Virtual try-on with AI warping.
+
+🎨 UX/UI Flow
+
+Closet Tab → “Dress Me” Button
+
+Choose avatar/photo.
+
+Enter drag-and-drop editor:
+
+Canvas with avatar in center.
+
+Closet items listed below or in side scroll bar.
+
+Gesture controls: pinch-to-zoom, rotate, drag-drop.
+
+Save → “Outfit Library”.
+
+🛠️ Technical Design
+
+Clothing PNGs: Generated on-device via manual background removal or masking tool.
+
+Canvas System:
+
+Implement with SwiftUI + Canvas API or UIKit UIImageView overlays.
+
+Store clothing position/scale metadata in JSON per outfit.
+
+Storage:
+
+Avatar photos in sandbox /avatars/ folder.
+
+Outfits: JSON + composite image preview stored in /outfits/.
+
+Example Outfit JSON:
+
+{
+  "outfit_id": "uuid-123",
+  "avatar": "avatar1.png",
+  "items": [
+    {"item_id": "shirt-456", "x":120, "y":240, "scale":1.2, "rotation":0},
+    {"item_id": "jeans-789", "x":115, "y":380, "scale":1.0, "rotation":-5}
+  ],
+  "tags": ["casual", "spring"],
+  "created_at": "2025-10-01"
+}
+
+🔐 Privacy
+
+Avatar photos stay local only.
+
+No cloud upload (unless future cloud sync added).
+
+Users can delete photos from settings.
+
+📆 Timeline (New Avatar Feature)
+Week	Milestone
+1	Avatar upload + storage
+2	Closet item PNG extraction tool
+3	Drag-and-drop canvas editor
+4	Save outfit to library
+5	Outfit editing (resize/rotate/layer)
+6	Internal testing & polish
+✅ Success Metrics
+
+≥70% of users upload at least 1 avatar photo.
+
+Users successfully save ≥3 outfits in “Outfit Library”.
+
+Drag-drop editor runs smoothly (<16ms frame time).
+
+50% of outfits created use the avatar mode (vs. collage).

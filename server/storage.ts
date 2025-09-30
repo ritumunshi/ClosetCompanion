@@ -4,6 +4,8 @@ import {
   outfits, 
   outfitHistory,
   notificationSubscriptions,
+  avatars,
+  outfitCompositions,
   type User, 
   type InsertUser,
   type ClothingItem,
@@ -13,7 +15,11 @@ import {
   type OutfitHistory,
   type InsertOutfitHistory,
   type NotificationSubscription,
-  type InsertNotificationSubscription
+  type InsertNotificationSubscription,
+  type Avatar,
+  type InsertAvatar,
+  type OutfitComposition,
+  type InsertOutfitComposition
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, gte, and } from "drizzle-orm";
@@ -42,6 +48,18 @@ export interface IStorage {
   createNotificationSubscription(subscription: InsertNotificationSubscription): Promise<NotificationSubscription>;
   deleteNotificationSubscription(id: number): Promise<boolean>;
   deleteNotificationSubscriptionByEndpoint(userId: number, endpoint: string): Promise<boolean>;
+  
+  getAvatars(userId: number): Promise<Avatar[]>;
+  getAvatar(id: number): Promise<Avatar | undefined>;
+  createAvatar(avatar: InsertAvatar): Promise<Avatar>;
+  updateAvatar(id: number, updates: Partial<Avatar>): Promise<Avatar | undefined>;
+  deleteAvatar(id: number): Promise<boolean>;
+  
+  getOutfitCompositions(userId: number): Promise<OutfitComposition[]>;
+  getOutfitComposition(id: number): Promise<OutfitComposition | undefined>;
+  createOutfitComposition(composition: InsertOutfitComposition): Promise<OutfitComposition>;
+  updateOutfitComposition(id: number, updates: Partial<OutfitComposition>): Promise<OutfitComposition | undefined>;
+  deleteOutfitComposition(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -200,6 +218,46 @@ export class MemStorage implements IStorage {
   async deleteNotificationSubscriptionByEndpoint(userId: number, endpoint: string): Promise<boolean> {
     return false;
   }
+  
+  async getAvatars(userId: number): Promise<Avatar[]> {
+    return [];
+  }
+  
+  async getAvatar(id: number): Promise<Avatar | undefined> {
+    return undefined;
+  }
+  
+  async createAvatar(avatar: InsertAvatar): Promise<Avatar> {
+    throw new Error("Not implemented for in-memory storage");
+  }
+  
+  async updateAvatar(id: number, updates: Partial<Avatar>): Promise<Avatar | undefined> {
+    return undefined;
+  }
+  
+  async deleteAvatar(id: number): Promise<boolean> {
+    return false;
+  }
+  
+  async getOutfitCompositions(userId: number): Promise<OutfitComposition[]> {
+    return [];
+  }
+  
+  async getOutfitComposition(id: number): Promise<OutfitComposition | undefined> {
+    return undefined;
+  }
+  
+  async createOutfitComposition(composition: InsertOutfitComposition): Promise<OutfitComposition> {
+    throw new Error("Not implemented for in-memory storage");
+  }
+  
+  async updateOutfitComposition(id: number, updates: Partial<OutfitComposition>): Promise<OutfitComposition | undefined> {
+    return undefined;
+  }
+  
+  async deleteOutfitComposition(id: number): Promise<boolean> {
+    return false;
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -321,6 +379,68 @@ export class DatabaseStorage implements IStorage {
       eq(notificationSubscriptions.userId, userId),
       eq(notificationSubscriptions.endpoint, endpoint)
     ));
+    return (result.rowCount || 0) > 0;
+  }
+  
+  async getAvatars(userId: number): Promise<Avatar[]> {
+    return await db.select().from(avatars).where(eq(avatars.userId, userId));
+  }
+  
+  async getAvatar(id: number): Promise<Avatar | undefined> {
+    const [avatar] = await db.select().from(avatars).where(eq(avatars.id, id));
+    return avatar || undefined;
+  }
+  
+  async createAvatar(insertAvatar: InsertAvatar): Promise<Avatar> {
+    const [avatar] = await db
+      .insert(avatars)
+      .values(insertAvatar)
+      .returning();
+    return avatar;
+  }
+  
+  async updateAvatar(id: number, updates: Partial<Avatar>): Promise<Avatar | undefined> {
+    const [avatar] = await db
+      .update(avatars)
+      .set(updates)
+      .where(eq(avatars.id, id))
+      .returning();
+    return avatar || undefined;
+  }
+  
+  async deleteAvatar(id: number): Promise<boolean> {
+    const result = await db.delete(avatars).where(eq(avatars.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+  
+  async getOutfitCompositions(userId: number): Promise<OutfitComposition[]> {
+    return await db.select().from(outfitCompositions).where(eq(outfitCompositions.userId, userId));
+  }
+  
+  async getOutfitComposition(id: number): Promise<OutfitComposition | undefined> {
+    const [composition] = await db.select().from(outfitCompositions).where(eq(outfitCompositions.id, id));
+    return composition || undefined;
+  }
+  
+  async createOutfitComposition(insertComposition: InsertOutfitComposition): Promise<OutfitComposition> {
+    const [composition] = await db
+      .insert(outfitCompositions)
+      .values(insertComposition)
+      .returning();
+    return composition;
+  }
+  
+  async updateOutfitComposition(id: number, updates: Partial<OutfitComposition>): Promise<OutfitComposition | undefined> {
+    const [composition] = await db
+      .update(outfitCompositions)
+      .set(updates)
+      .where(eq(outfitCompositions.id, id))
+      .returning();
+    return composition || undefined;
+  }
+  
+  async deleteOutfitComposition(id: number): Promise<boolean> {
+    const result = await db.delete(outfitCompositions).where(eq(outfitCompositions.id, id));
     return (result.rowCount || 0) > 0;
   }
 }

@@ -51,6 +51,27 @@ export const notificationSubscriptions = pgTable("notification_subscriptions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const avatars = pgTable("avatars", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  imageUrl: text("image_url").notNull(),
+  name: text("name"),
+  isDefault: boolean("is_default").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const outfitCompositions = pgTable("outfit_compositions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  avatarId: integer("avatar_id"),
+  name: text("name").notNull(),
+  previewImageUrl: text("preview_image_url"),
+  items: text("items").notNull(), // JSON string of item positions/scales/rotations
+  occasion: text("occasion"),
+  season: text("season"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -76,6 +97,16 @@ export const insertNotificationSubscriptionSchema = createInsertSchema(notificat
   createdAt: true,
 });
 
+export const insertAvatarSchema = createInsertSchema(avatars).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertOutfitCompositionSchema = createInsertSchema(outfitCompositions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -90,3 +121,9 @@ export type OutfitHistory = typeof outfitHistory.$inferSelect;
 
 export type InsertNotificationSubscription = z.infer<typeof insertNotificationSubscriptionSchema>;
 export type NotificationSubscription = typeof notificationSubscriptions.$inferSelect;
+
+export type InsertAvatar = z.infer<typeof insertAvatarSchema>;
+export type Avatar = typeof avatars.$inferSelect;
+
+export type InsertOutfitComposition = z.infer<typeof insertOutfitCompositionSchema>;
+export type OutfitComposition = typeof outfitCompositions.$inferSelect;
