@@ -145,6 +145,14 @@ export class MemStorage implements IStorage {
     return true;
   }
 
+  async updateUserPassword(userId: number, hashedPassword: string): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (!user) return false;
+    user.password = hashedPassword;
+    this.users.set(userId, user);
+    return true;
+  }
+
   async getClothingItems(userId: number): Promise<ClothingItem[]> {
     return Array.from(this.clothingItems.values()).filter(
       (item) => item.userId === userId
@@ -356,6 +364,14 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .update(users)
       .set({ phoneVerified: true, otpCode: null, otpExpiry: null })
+      .where(eq(users.id, userId));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async updateUserPassword(userId: number, hashedPassword: string): Promise<boolean> {
+    const result = await db
+      .update(users)
+      .set({ password: hashedPassword })
       .where(eq(users.id, userId));
     return (result.rowCount || 0) > 0;
   }

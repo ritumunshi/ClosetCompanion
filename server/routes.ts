@@ -236,6 +236,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { phone, otp, newPassword } = req.body;
+      
+      if (!phone || !otp || !newPassword) {
+        return res.status(400).json({ error: "Phone number, OTP, and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: "Password must be at least 6 characters" });
+      }
+
+      // Verify OTP
+      const user = await storage.verifyUserOtp(phone, otp);
+      
+      if (!user) {
+        return res.status(401).json({ error: "Invalid or expired OTP" });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Update password
+      await storage.updateUserPassword(user.id, hashedPassword);
+
+      // Clear OTP
+      await storage.markPhoneVerified(user.id);
+
+      res.json({ 
+        message: "Password reset successfully"
+      });
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      res.status(500).json({ error: "Failed to reset password" });
+    }
+  });
+
   // Clothing Items Routes
   app.get("/api/clothing-items", async (req, res) => {
     try {
