@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { User, Settings, HandHelping, LogOut, Bell } from "lucide-react";
+import { User, Settings, HandHelping, LogOut, Bell, UserCircle } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Profile() {
@@ -38,6 +38,19 @@ export default function Profile() {
               >
                 <Bell size={20} className="mr-3" />
                 <span>Notifications</span>
+              </Button>
+            </Card>
+          </Link>
+
+          <Link href="/avatars">
+            <Card className="bg-white rounded-2xl border border-neutral-200">
+              <Button 
+                variant="ghost" 
+                className="w-full p-6 justify-start text-left"
+                data-testid="button-avatars"
+              >
+                <UserCircle size={20} className="mr-3" />
+                <span>My Avatars</span>
               </Button>
             </Card>
           </Link>

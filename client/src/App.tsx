@@ -10,6 +10,7 @@ import Wardrobe from "@/pages/wardrobe";
 import Outfits from "@/pages/outfits";
 import Notifications from "@/pages/notifications";
 import Profile from "@/pages/profile";
+import Avatars from "@/pages/avatars";
 import NotFound from "@/pages/not-found";
 import { useNotifications } from "@/hooks/useNotifications";
 
@@ -20,6 +21,7 @@ function Router() {
         <Route path="/" component={Home} />
         <Route path="/wardrobe" component={Wardrobe} />
         <Route path="/outfits" component={Outfits} />
+        <Route path="/avatars" component={Avatars} />
         <Route path="/notifications" component={Notifications} />
         <Route path="/profile" component={Profile} />
         <Route component={NotFound} />
