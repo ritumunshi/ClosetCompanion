@@ -3,6 +3,7 @@ import {
   clothingItems, 
   outfits, 
   outfitHistory,
+  notificationSubscriptions,
   type User, 
   type InsertUser,
   type ClothingItem,
@@ -10,10 +11,12 @@ import {
   type Outfit,
   type InsertOutfit,
   type OutfitHistory,
-  type InsertOutfitHistory
+  type InsertOutfitHistory,
+  type NotificationSubscription,
+  type InsertNotificationSubscription
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, gte } from "drizzle-orm";
+import { eq, gte, and } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -34,6 +37,11 @@ export interface IStorage {
   getOutfitHistory(userId: number): Promise<OutfitHistory[]>;
   createOutfitHistory(history: InsertOutfitHistory): Promise<OutfitHistory>;
   getRecentOutfitHistory(userId: number, days: number): Promise<OutfitHistory[]>;
+  
+  getNotificationSubscriptions(userId: number): Promise<NotificationSubscription[]>;
+  createNotificationSubscription(subscription: InsertNotificationSubscription): Promise<NotificationSubscription>;
+  deleteNotificationSubscription(id: number): Promise<boolean>;
+  deleteNotificationSubscriptionByEndpoint(userId: number, endpoint: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -176,6 +184,22 @@ export class MemStorage implements IStorage {
                    history.wornDate >= cutoffDate
     );
   }
+  
+  async getNotificationSubscriptions(userId: number): Promise<NotificationSubscription[]> {
+    return [];
+  }
+  
+  async createNotificationSubscription(subscription: InsertNotificationSubscription): Promise<NotificationSubscription> {
+    throw new Error("Not implemented for in-memory storage");
+  }
+  
+  async deleteNotificationSubscription(id: number): Promise<boolean> {
+    return false;
+  }
+  
+  async deleteNotificationSubscriptionByEndpoint(userId: number, endpoint: string): Promise<boolean> {
+    return false;
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -269,8 +293,35 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(outfitHistory)
-      .where(eq(outfitHistory.userId, userId))
-      .where(gte(outfitHistory.wornDate, cutoffDate));
+      .where(and(
+        eq(outfitHistory.userId, userId),
+        gte(outfitHistory.wornDate, cutoffDate)
+      ));
+  }
+  
+  async getNotificationSubscriptions(userId: number): Promise<NotificationSubscription[]> {
+    return await db.select().from(notificationSubscriptions).where(eq(notificationSubscriptions.userId, userId));
+  }
+  
+  async createNotificationSubscription(subscription: InsertNotificationSubscription): Promise<NotificationSubscription> {
+    const [sub] = await db
+      .insert(notificationSubscriptions)
+      .values(subscription)
+      .returning();
+    return sub;
+  }
+  
+  async deleteNotificationSubscription(id: number): Promise<boolean> {
+    const result = await db.delete(notificationSubscriptions).where(eq(notificationSubscriptions.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+  
+  async deleteNotificationSubscriptionByEndpoint(userId: number, endpoint: string): Promise<boolean> {
+    const result = await db.delete(notificationSubscriptions).where(and(
+      eq(notificationSubscriptions.userId, userId),
+      eq(notificationSubscriptions.endpoint, endpoint)
+    ));
+    return (result.rowCount || 0) > 0;
   }
 }
 

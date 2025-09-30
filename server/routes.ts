@@ -2,11 +2,12 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertClothingItemSchema, insertOutfitSchema, insertOutfitHistorySchema } from "@shared/schema";
+import { insertClothingItemSchema, insertOutfitSchema, insertOutfitHistorySchema, insertNotificationSubscriptionSchema } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import webpush from "web-push";
 
 // Configure multer for image uploads
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -25,6 +26,25 @@ const upload = multer({
     }
   }
 });
+
+// Get VAPID keys from environment
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || '';
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || '';
+
+// Function to configure web-push (called lazily when needed)
+function ensureWebPushConfigured() {
+  if (vapidPublicKey && vapidPrivateKey) {
+    try {
+      webpush.setVapidDetails(
+        'mailto:admin@closetconcierge.app',
+        vapidPublicKey,
+        vapidPrivateKey
+      );
+    } catch (error) {
+      console.error('Failed to configure web-push:', error);
+    }
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Mock user ID for demo (in real app, this would come from authentication)
@@ -257,6 +277,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ error: "Failed to generate outfit suggestion" });
     }
+  });
+
+  // Notification Subscription Routes
+  app.get("/api/notification-subscriptions", async (req, res) => {
+    try {
+      const subscriptions = await storage.getNotificationSubscriptions(DEMO_USER_ID);
+      res.json(subscriptions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notification subscriptions" });
+    }
+  });
+
+  app.post("/api/notification-subscriptions", async (req, res) => {
+    try {
+      const { endpoint, keys } = req.body;
+      
+      if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
+        return res.status(400).json({ error: "Invalid subscription data" });
+      }
+      
+      const validatedData = insertNotificationSubscriptionSchema.parse({
+        userId: DEMO_USER_ID,
+        endpoint: endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth
+      });
+      
+      const subscription = await storage.createNotificationSubscription(validatedData);
+      res.json(subscription);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Invalid data", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Failed to save notification subscription" });
+      }
+    }
+  });
+
+  app.delete("/api/notification-subscriptions/:endpoint", async (req, res) => {
+    try {
+      const endpoint = decodeURIComponent(req.params.endpoint);
+      const deleted = await storage.deleteNotificationSubscriptionByEndpoint(DEMO_USER_ID, endpoint);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Subscription not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete notification subscription" });
+    }
+  });
+
+  // Send notification endpoint
+  app.post("/api/send-notification", async (req, res) => {
+    try {
+      if (!vapidPublicKey || !vapidPrivateKey) {
+        return res.status(503).json({ error: "Push notifications not configured. VAPID keys missing." });
+      }
+      
+      ensureWebPushConfigured();
+      
+      const { title, body, icon, data } = req.body;
+      
+      const subscriptions = await storage.getNotificationSubscriptions(DEMO_USER_ID);
+      
+      if (subscriptions.length === 0) {
+        return res.status(404).json({ error: "No active subscriptions found" });
+      }
+      
+      const payload = JSON.stringify({
+        title: title || 'Closet Concierge',
+        body: body || 'You have a new notification',
+        icon: icon || '/icon-192x192.png',
+        data: data || {}
+      });
+      
+      const results = await Promise.allSettled(
+        subscriptions.map((sub, index) =>
+          webpush.sendNotification({
+            endpoint: sub.endpoint,
+            keys: {
+              p256dh: sub.p256dh,
+              auth: sub.auth
+            }
+          }, payload).then(() => ({ index, status: 'success' as const }))
+          .catch((error: any) => ({ index, status: 'error' as const, error, subId: sub.id }))
+        )
+      );
+      
+      // Remove subscriptions that permanently failed (410 Gone, 404 Not Found)
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value.status === 'error') {
+          const error = result.value.error;
+          if (error.statusCode === 410 || error.statusCode === 404) {
+            const subId = result.value.subId;
+            await storage.deleteNotificationSubscription(subId);
+            console.log(`Removed invalid subscription ${subId}`);
+          }
+        }
+      }
+      
+      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.status === 'success').length;
+      const failCount = results.length - successCount;
+      
+      res.json({ 
+        success: true, 
+        sent: successCount,
+        failed: failCount
+      });
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      res.status(500).json({ error: "Failed to send notification" });
+    }
+  });
+
+  // Get VAPID public key endpoint
+  app.get("/api/vapid-public-key", (req, res) => {
+    if (!vapidPublicKey) {
+      return res.status(503).json({ error: "Push notifications not configured. VAPID key missing." });
+    }
+    res.json({ publicKey: vapidPublicKey });
   });
 
   // Serve uploaded images

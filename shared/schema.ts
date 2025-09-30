@@ -42,6 +42,15 @@ export const outfitHistory = pgTable("outfit_history", {
   weather: text("weather"),
 });
 
+export const notificationSubscriptions = pgTable("notification_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -62,6 +71,11 @@ export const insertOutfitHistorySchema = createInsertSchema(outfitHistory).omit(
   wornDate: true,
 });
 
+export const insertNotificationSubscriptionSchema = createInsertSchema(notificationSubscriptions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -73,3 +87,6 @@ export type Outfit = typeof outfits.$inferSelect;
 
 export type InsertOutfitHistory = z.infer<typeof insertOutfitHistorySchema>;
 export type OutfitHistory = typeof outfitHistory.$inferSelect;
+
+export type InsertNotificationSubscription = z.infer<typeof insertNotificationSubscriptionSchema>;
+export type NotificationSubscription = typeof notificationSubscriptions.$inferSelect;
